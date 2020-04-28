@@ -115,7 +115,7 @@ int main(int argc, char **argv)  {
         delete moduleData;
     }
 
-    DirList modules("fs:/vol/external01/wiiu/modules/setup", ".rpx", DirList::Files, 1);
+    DirList modules("fs:/vol/external01/wiiu/modules", ".rpx", DirList::Files, 1);
     modules.SortList();
 
     for(int i = 0; i < modules.GetFilecount(); i++) {
