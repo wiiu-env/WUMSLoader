@@ -1,0 +1,9 @@
+*.elf
+*.rpx
+build/
+*.cbp
+obj/
+relocator.h
+*.depend
+*.cscope_file_list
+*.layout
