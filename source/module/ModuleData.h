@@ -48,6 +48,14 @@ public:
         this->entrypoint = addr;
     }
 
+    void setAddress(uint32_t addr) {
+        this->address = addr;
+    }
+
+    void setSize(uint32_t size) {
+        this->size = size;
+    }
+
     void addRelocationData(RelocationData * relocation_data) {
         relocation_data_list.push_back(relocation_data);
     }
@@ -76,6 +84,14 @@ public:
         return entrypoint;
     }
 
+    uint32_t getAddress() {
+        return address;
+    }
+
+    uint32_t getSize() {
+        return address;
+    }
+
     std::string toString();
 private:
     std::vector<RelocationData *> relocation_data_list;
@@ -84,5 +100,7 @@ private:
     uint32_t bssSize = 0;
     uint32_t sbssAddr = 0;
     uint32_t sbssSize = 0;
+    uint32_t address = 0;
+    uint32_t size = 0;
     uint32_t entrypoint = 0;
 };

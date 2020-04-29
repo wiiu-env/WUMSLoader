@@ -40,6 +40,8 @@ struct module_information_single_t {
     uint32_t                        sbssAddr;
     uint32_t                        sbssSize;
     uint32_t                        entrypoint;
+    uint32_t                        address;
+    uint32_t                        size;
 };
 
 #define MAXIMUM_MODULES                                     8
