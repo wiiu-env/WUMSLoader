@@ -6,6 +6,7 @@ IMPORT(OSDynLoad_FindExport);
 IMPORT(DCFlushRange);
 IMPORT(ICInvalidateRange);
 IMPORT(OSGetSystemInfo);
+IMPORT(MEMGetSizeForMBlockExpHeap);
 IMPORT(OSSleepTicks);
 IMPORT(OSFatal);
 
