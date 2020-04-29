@@ -35,7 +35,7 @@ SOURCES		:=	src
 
 DATA		:=	data
 
-INCLUDES	:=  src ../source
+INCLUDES	:=  src
 
 #---------------------------------------------------------------------------------
 # options for code generation

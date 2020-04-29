@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/module_defines.h"
+#include "../../source/common/module_defines.h"
 #include "ModuleData.h"
 
 class ModuleDataPersistence {

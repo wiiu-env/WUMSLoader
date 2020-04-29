@@ -1,5 +1,5 @@
 #pragma once
-#include "common/dynamic_linking_defines.h"
+#include "../../source/common/dynamic_linking_defines.h"
 #include "logger.h"
 #include <string>
 #include <vector>

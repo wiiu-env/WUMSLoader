@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <utils/logger.h>
+#include "logger.h"
 #include <nsysnet/socket.h>
 #include <coreinit/debug.h>
 

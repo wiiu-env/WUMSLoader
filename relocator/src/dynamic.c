@@ -21,7 +21,6 @@ EXPORT_VAR(uint32_t *, pMEMAllocFromDefaultHeapEx);
 EXPORT_VAR(uint32_t *, pMEMAllocFromDefaultHeap);
 EXPORT_VAR(uint32_t *, pMEMFreeToDefaultHeap);
 
-
 void InitFunctionPointers(void) {
     OSDynLoad_Module handle;
     addr_OSDynLoad_Acquire = (void*) 0x0102A3B4;

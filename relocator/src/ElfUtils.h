@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "common/relocation_defines.h"
+#include "../../source/common/relocation_defines.h"
 
 #ifdef __cplusplus
 extern "C" {

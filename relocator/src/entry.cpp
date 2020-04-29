@@ -5,13 +5,13 @@
 #include <coreinit/dynload.h>
 #include <coreinit/cache.h>
 #include <nsysnet/socket.h>
-#include "common/dynamic_linking_defines.h"
-#include "common/module_defines.h"
+#include "../../source/common/dynamic_linking_defines.h"
+#include "../../source/common/module_defines.h"
 #include "RelocationData.h"
 #include "ModuleData.h"
 #include "ModuleDataPersistence.h"
 #include "ElfUtils.h"
-#include "common/relocation_defines.h"
+#include "../../source/common/relocation_defines.h"
 
 #include "logger.h"
 #include "dynamic.h"
