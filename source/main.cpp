@@ -120,7 +120,7 @@ int main(int argc, char **argv)  {
 
     for(int i = 0; i < modules.GetFilecount(); i++) {
         *gModuleData = {};
-        DEBUG_FUNCTION_LINE("Loading module %s",setupModules.GetFilepath(i));
+        DEBUG_FUNCTION_LINE("Loading module %s",modules.GetFilepath(i));
 
         ModuleData * moduleData = ModuleDataFactory::load(modules.GetFilepath(i), 0x00880000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
 
