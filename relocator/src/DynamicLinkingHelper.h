@@ -1,9 +1,9 @@
 #pragma once
 #include "../../source/common/dynamic_linking_defines.h"
-#include "logger.h"
+#include "utils/logger.h"
 #include <string>
 #include <vector>
-#include "RelocationData.h"
+#include "../../source/module/RelocationData.h"
 
 class DynamicLinkingHelper {
 public:

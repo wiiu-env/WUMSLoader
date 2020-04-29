@@ -7,17 +7,16 @@
 #include <nsysnet/socket.h>
 #include "../../source/common/dynamic_linking_defines.h"
 #include "../../source/common/module_defines.h"
-#include "RelocationData.h"
-#include "ModuleData.h"
+#include "../../source/module/RelocationData.h"
+#include "../../source/module/ModuleData.h"
 #include "ModuleDataPersistence.h"
 #include "ElfUtils.h"
 #include "../../source/common/relocation_defines.h"
 
-#include "logger.h"
-#include "dynamic.h"
+#include "utils/logger.h"
+#include "utils/dynamic.h"
 
 #define gModuleData ((module_information_t *) (0x00880000))
-
 
 extern "C" void doStart(int argc, char **argv);
 // We need to wrap it to make sure the main function is called AFTER our code.
@@ -51,7 +50,6 @@ bool doRelocation(std::vector<RelocationData *> &relocData, relocation_trampolin
             DEBUG_FUNCTION_LINE("Relocation failed\n");
             return false;
         }
-
     }
 
     DCFlushRange(tramp_data, tramp_length * sizeof(relocation_trampolin_entry_t));

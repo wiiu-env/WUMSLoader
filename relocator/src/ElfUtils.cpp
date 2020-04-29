@@ -2,7 +2,7 @@
 #include <string.h>
 #include <coreinit/cache.h>
 
-#include "logger.h"
+#include "utils/logger.h"
 #include "ElfUtils.h"
 
 // See https://github.com/decaf-emu/decaf-emu/blob/43366a34e7b55ab9d19b2444aeb0ccd46ac77dea/src/libdecaf/src/cafe/loader/cafe_loader_reloc.cpp#L144

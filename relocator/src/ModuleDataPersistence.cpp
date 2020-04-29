@@ -1,8 +1,8 @@
 #include "ModuleDataPersistence.h"
 #include "DynamicLinkingHelper.h"
 #include "../../source/common/module_defines.h"
-#include "ModuleData.h"
-#include "RelocationData.h"
+#include "../../source/module/ModuleData.h"
+#include "../../source/module/RelocationData.h"
 #include <coreinit/cache.h>
 
 bool ModuleDataPersistence::saveModuleData(module_information_t * moduleInformation, ModuleData * module) {

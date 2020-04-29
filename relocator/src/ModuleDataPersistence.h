@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../source/common/module_defines.h"
-#include "ModuleData.h"
+#include "../../source/module/ModuleData.h"
 
 class ModuleDataPersistence {
 public:
