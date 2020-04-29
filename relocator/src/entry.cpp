@@ -16,7 +16,7 @@
 #include "logger.h"
 #include "dynamic.h"
 
-#define gModuleData ((module_information_t *) (0x00800000))
+#define gModuleData ((module_information_t *) (0x00880000))
 
 
 extern "C" void doStart(int argc, char **argv);

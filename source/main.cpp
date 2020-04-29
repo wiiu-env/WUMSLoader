@@ -44,7 +44,7 @@ bool CheckRunning() {
 }
 
 
-#define gModuleData ((module_information_t *) (0x00800000))
+#define gModuleData ((module_information_t *) (0x00880000))
 static_assert(sizeof(module_information_t) <= 0x80000);
 
 extern "C" uint32_t textStart();
@@ -89,7 +89,7 @@ int main(int argc, char **argv)  {
     for(int i = 0; i < setupModules.GetFilecount(); i++) {
         *gModuleData = {};
         DEBUG_FUNCTION_LINE("Trying to run %s",setupModules.GetFilepath(i));
-        ModuleData * moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), 0x00880000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        ModuleData * moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
         if(moduleData == NULL) {
             DEBUG_FUNCTION_LINE("Failed to load %s", setupModules.GetFilepath(i));
             continue;
@@ -115,6 +115,8 @@ int main(int argc, char **argv)  {
         delete moduleData;
     }
 
+    *gModuleData = {};
+
     DirList modules("fs:/vol/external01/wiiu/modules", ".rpx", DirList::Files, 1);
     modules.SortList();
 
@@ -122,7 +124,7 @@ int main(int argc, char **argv)  {
         *gModuleData = {};
         DEBUG_FUNCTION_LINE("Loading module %s",modules.GetFilepath(i));
 
-        ModuleData * moduleData = ModuleDataFactory::load(modules.GetFilepath(i), 0x00880000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        ModuleData * moduleData = ModuleDataFactory::load(modules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
 
         if(moduleData != NULL) {
             ModuleDataPersistence::saveModuleData(gModuleData, moduleData);
