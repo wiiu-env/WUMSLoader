@@ -127,8 +127,11 @@ int main(int argc, char **argv)  {
         ModuleData * moduleData = ModuleDataFactory::load(modules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
 
         if(moduleData != NULL) {
+            DEBUG_FUNCTION_LINE("Successfully loaded %s", modules.GetFilepath(i));
             ModuleDataPersistence::saveModuleData(gModuleData, moduleData);
             delete moduleData;
+        }else{
+            DEBUG_FUNCTION_LINE("Failed to load %s", modules.GetFilepath(i));
         }
     }
 

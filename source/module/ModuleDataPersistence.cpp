@@ -10,15 +10,18 @@ bool ModuleDataPersistence::saveModuleData(module_information_t * moduleInformat
     int32_t module_count = moduleInformation->number_used_modules;
 
     if(module_count >= MAXIMUM_MODULES) {
+        DEBUG_FUNCTION_LINE("Reached maximum module count of %d", MAXIMUM_MODULES);
         return false;
     }
     // Copy data to global struct.
     module_information_single_t * module_data = &(moduleInformation->module_data[module_count]);
 
+    DEBUG_FUNCTION_LINE("Saving reloation data for module at %08X", module->getEntrypoint());
     // Relocation
     std::vector<RelocationData *> relocationData = module->getRelocationDataList();
     for (auto const& reloc : relocationData) {
         if(!DynamicLinkingHelper::addReloationEntry(&(moduleInformation->linking_data), module_data->linking_entries, DYN_LINK_RELOCATION_LIST_LENGTH, reloc)) {
+            DEBUG_FUNCTION_LINE("Failed to add relocation entry\n");
             return false;
         }
     }

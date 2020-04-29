@@ -88,8 +88,9 @@ bool ResolveRelocations() {
 }
 
 extern "C" void doStart(int argc, char **argv) {
+    DEBUG_FUNCTION_LINE("Resolve relocations\n");
+    DEBUG_FUNCTION_LINE("Number of modules %d\n", gModuleData->number_used_modules);
     ResolveRelocations();
-
     for(int i = 0; i<gModuleData->number_used_modules; i++) {
         DEBUG_FUNCTION_LINE("About to call %08X\n",gModuleData->module_data[i].entrypoint);
         int ret = ( (int (*)(int, char **))(gModuleData->module_data[i].entrypoint) )(argc, argv);
