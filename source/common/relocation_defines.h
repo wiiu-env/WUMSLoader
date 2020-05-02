@@ -14,6 +14,7 @@ typedef enum RelocationType{
 } RelocationType;
 
 typedef struct relocation_trampolin_entry_t {
+    uint32_t id;
     uint32_t trampolin[4];
     RelocationTrampolinStatus status = RELOC_TRAMP_FREE;
 } relocation_trampolin_entry_t;

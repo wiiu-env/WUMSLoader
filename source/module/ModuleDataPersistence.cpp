@@ -30,8 +30,8 @@ bool ModuleDataPersistence::saveModuleData(module_information_t * moduleInformat
     module_data->bssSize = module->getBSSSize();
     module_data->sbssAddr = module->getSBSSAddr();
     module_data->sbssSize = module->getSBSSSize();
-    module_data->address = module->getAddress();
-    module_data->size = module->getSize();
+    module_data->startAddress = module->getStartAddress();
+    module_data->endAddress = module->getEndAddress();
 
     module_data->entrypoint = module->getEntrypoint();
 
@@ -68,8 +68,8 @@ std::vector<ModuleData*> ModuleDataPersistence::loadModuleData(module_informatio
         moduleData->setBSSLocation(module_data->bssAddr, module_data->bssSize);
         moduleData->setSBSSLocation(module_data->sbssAddr, module_data->sbssSize);
         moduleData->setEntrypoint(module_data->entrypoint);
-        moduleData->setAddress(module_data->address);
-        moduleData->setSize(module_data->size);
+        moduleData->setStartAddress(module_data->startAddress);
+        moduleData->setEndAddress(module_data->endAddress);
 
         for(uint32_t j = 0; j < DYN_LINK_RELOCATION_LIST_LENGTH; j++) {
             dyn_linking_relocation_entry_t * linking_entry = &(module_data->linking_entries[j]);

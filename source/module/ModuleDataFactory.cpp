@@ -52,6 +52,8 @@ ModuleData * ModuleDataFactory::load(std::string path, uint32_t destination_addr
     uint32_t entrypoint = offset_text + (uint32_t) reader.get_entry() - 0x02000000;
 
     uint32_t totalSize = 0;
+    uint32_t endAddress = 0;
+
 
     for(uint32_t i = 0; i < sec_num; ++i ) {
         section* psec = reader.sections[i];
@@ -104,6 +106,10 @@ ModuleData * ModuleDataFactory::load(std::string path, uint32_t destination_addr
             }
             totalSize += sectionSize;
 
+            if(endAddress < destination + sectionSize){
+                endAddress = destination + sectionSize;
+            }
+
             DCFlushRange((void*)destination, sectionSize);
             ICInvalidateRange((void*)destination, sectionSize);
         }
@@ -133,13 +139,14 @@ ModuleData * ModuleDataFactory::load(std::string path, uint32_t destination_addr
     free(destinations);
 
     moduleData->setEntrypoint(entrypoint);
-    moduleData->setAddress(destination_address);
-    moduleData->setSize(totalSize);
+    moduleData->setStartAddress(destination_address);
+    moduleData->setEndAddress(endAddress);
     DEBUG_FUNCTION_LINE("Saved entrypoint as %08X", entrypoint);
+    DEBUG_FUNCTION_LINE("Saved startAddress as %08X", destination_address);
+    DEBUG_FUNCTION_LINE("Saved endAddress as %08X", endAddress);
 
     return moduleData;
 }
-
 
 std::vector<RelocationData*> ModuleDataFactory::getImportRelocationData(elfio& reader, uint8_t ** destinations) {
     std::vector<RelocationData*> result;

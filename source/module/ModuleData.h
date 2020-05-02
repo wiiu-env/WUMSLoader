@@ -48,12 +48,12 @@ public:
         this->entrypoint = addr;
     }
 
-    void setAddress(uint32_t addr) {
-        this->address = addr;
+    void setStartAddress(uint32_t addr) {
+        this->startAddress = addr;
     }
 
-    void setSize(uint32_t size) {
-        this->size = size;
+    void setEndAddress(uint32_t endAddress) {
+        this->endAddress = endAddress;
     }
 
     void addRelocationData(RelocationData * relocation_data) {
@@ -84,12 +84,12 @@ public:
         return entrypoint;
     }
 
-    uint32_t getAddress() {
-        return address;
+    uint32_t getStartAddress() {
+        return startAddress;
     }
 
-    uint32_t getSize() {
-        return address;
+    uint32_t getEndAddress() {
+        return endAddress;
     }
 
     std::string toString();
@@ -100,7 +100,7 @@ private:
     uint32_t bssSize = 0;
     uint32_t sbssAddr = 0;
     uint32_t sbssSize = 0;
-    uint32_t address = 0;
-    uint32_t size = 0;
+    uint32_t startAddress = 0;
+    uint32_t endAddress = 0;
     uint32_t entrypoint = 0;
 };

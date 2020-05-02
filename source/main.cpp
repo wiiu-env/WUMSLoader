@@ -81,13 +81,11 @@ int main(int argc, char **argv)  {
     // Currently the size of the .init is ~ 0x24 bytes. We substract 0x100 to be safe.
     uint32_t textSectionStart = textStart() - 0x1000;
 
-    *gModuleData = {};
-
     DirList setupModules("fs:/vol/external01/wiiu/modules/setup", ".rpx", DirList::Files, 1);
     setupModules.SortList();
 
     for(int i = 0; i < setupModules.GetFilecount(); i++) {
-        *gModuleData = {};
+        memset((void*)gModuleData, 0, sizeof(module_information_t));
         DEBUG_FUNCTION_LINE("Trying to run %s",setupModules.GetFilepath(i));
         ModuleData * moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
         if(moduleData == NULL) {
@@ -115,13 +113,12 @@ int main(int argc, char **argv)  {
         delete moduleData;
     }
 
-    *gModuleData = {};
+    memset((void*)gModuleData, 0, sizeof(module_information_t));
 
     DirList modules("fs:/vol/external01/wiiu/modules", ".rpx", DirList::Files, 1);
     modules.SortList();
 
     for(int i = 0; i < modules.GetFilecount(); i++) {
-        *gModuleData = {};
         DEBUG_FUNCTION_LINE("Loading module %s",modules.GetFilepath(i));
 
         ModuleData * moduleData = ModuleDataFactory::load(modules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
@@ -130,7 +127,7 @@ int main(int argc, char **argv)  {
             DEBUG_FUNCTION_LINE("Successfully loaded %s", modules.GetFilepath(i));
             ModuleDataPersistence::saveModuleData(gModuleData, moduleData);
             delete moduleData;
-        }else{
+        } else {
             DEBUG_FUNCTION_LINE("Failed to load %s", modules.GetFilepath(i));
         }
     }
