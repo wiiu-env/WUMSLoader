@@ -22,6 +22,7 @@
 #include <map>
 #include "RelocationData.h"
 #include "SectionInfo.h"
+#include "ExportData.h"
 
 class ModuleData {
 public:
@@ -59,6 +60,14 @@ public:
 
     const std::vector<RelocationData> &getRelocationDataList() const {
         return relocation_data_list;
+    }
+
+    void addExportData(const ExportData &data) {
+        export_data_list.push_back(data);
+    }
+
+    const std::vector<ExportData> &getExportDataList() const {
+        return export_data_list;
     }
 
     void addSectionInfo(const SectionInfo &sectionInfo) {
@@ -106,9 +115,20 @@ public:
 
     std::string toString() const;
 
+    void setExportName(const std::string &name) {
+        this->export_name = name;
+    }
+
+    std::string getExportName() const {
+        return this->export_name;
+    }
+
 private:
     std::vector<RelocationData> relocation_data_list;
+    std::vector<ExportData> export_data_list;
     std::map<std::string, SectionInfo> section_info_list;
+
+    std::string export_name;
 
     uint32_t bssAddr = 0;
     uint32_t bssSize = 0;

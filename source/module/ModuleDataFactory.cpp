@@ -19,11 +19,13 @@
 #include <vector>
 #include <map>
 #include <coreinit/cache.h>
+#include <wums.h>
 #include "ModuleDataFactory.h"
 #include "elfio/elfio.hpp"
 #include "utils/utils.h"
 #include "ElfUtils.h"
 #include "SectionInfo.h"
+#include "ExportData.h"
 
 using namespace ELFIO;
 
@@ -104,7 +106,6 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t des
             moduleData.addSectionInfo(SectionInfo(psec->get_name(), destination, sectionSize));
             DEBUG_FUNCTION_LINE("Saved %s section info. Location: %08X size: %08X", psec->get_name().c_str(), destination, sectionSize);
 
-
             totalSize += sectionSize;
 
             if (endAddress < destination + sectionSize) {
@@ -133,8 +134,55 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t des
         moduleData.addRelocationData(reloc);
     }
 
-    DCFlushRange((void *) destination_address, totalSize);
-    ICInvalidateRange((void *) destination_address, totalSize);
+    std::optional<SectionInfo> secInfo = moduleData.getSectionInfo(".wums.exports");
+    if (secInfo && secInfo->getSize() > 0) {
+        size_t entries_count = secInfo->getSize() / sizeof(wums_entry_t);
+        wums_entry_t *entries = (wums_entry_t *) secInfo->getAddress();
+        if (entries != NULL) {
+            for (size_t j = 0; j < entries_count; j++) {
+                wums_entry_t * exp = &entries[j];
+                DEBUG_FUNCTION_LINE("Saving export of type %08X, name %s, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, exp->type, exp->name, (void *)  exp->address);
+                ExportData export_data(exp->type, exp->name, exp->address);
+                moduleData.addExportData(export_data);
+            }
+        }
+    }
+
+    secInfo = moduleData.getSectionInfo(".wums.meta");
+    if (secInfo && secInfo->getSize() > 0) {
+        wums_entry_t *entries = (wums_entry_t *) secInfo->getAddress();
+        if (entries != NULL) {
+
+            char *curEntry = (char *) secInfo->getAddress();
+            while ((uint32_t) curEntry < (uint32_t) secInfo->getAddress() + secInfo->getSize()) {
+                if (*curEntry == '\0') {
+                    curEntry++;
+                    continue;
+                }
+
+                auto firstFound = std::string(curEntry).find_first_of("=");
+                if (firstFound != std::string::npos) {
+                    curEntry[firstFound] = '\0';
+                    std::string key(curEntry);
+                    std::string value(curEntry + firstFound + 1);
+
+                    if (key.compare("export_name") == 0) {
+                        DEBUG_FUNCTION_LINE("export_name = %s", value.c_str());
+                        moduleData.setExportName(value);
+                    }else if (key.compare("wums") == 0) {
+                        if (value.compare("0.1") != 0) {
+                            DEBUG_FUNCTION_LINE("Warning: Ignoring module - Unsupported WUMS version: %s.\n", value.c_str());
+                            return std::nullopt;
+                        }
+                    }
+                }
+                curEntry += strlen(curEntry) + 1;
+            }
+        }
+    }
+
+    DCFlushRange((void*)destination_address, totalSize);
+    ICInvalidateRange((void*)destination_address, totalSize);
 
     free(destinations);
 

@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 
     memset((void *) gModuleData, 0, sizeof(module_information_t));
 
-    DirList modules("fs:/vol/external01/wiiu/modules", ".rpx", DirList::Files, 1);
+    DirList modules("fs:/vol/external01/wiiu/modules", ".wms", DirList::Files, 1);
     modules.SortList();
 
     for (int i = 0; i < modules.GetFilecount(); i++) {

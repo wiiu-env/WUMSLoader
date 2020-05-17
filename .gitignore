@@ -9,3 +9,4 @@ relocator.h
 *.layout
 .idea/
 cmake-build-debug/
+*.txt

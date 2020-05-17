@@ -22,6 +22,8 @@ export CXX	:=	$(PREFIX)g++
 export AR	:=	$(PREFIX)ar
 export OBJCOPY	:=	$(PREFIX)objcopy
 
+WUMS_ROOT := $(DEVKITPRO)/wums
+
 #---------------------------------------------------------------------------------
 # TARGET is the name of the output
 # BUILD is the directory where object files & intermediate files will be placed
@@ -53,7 +55,7 @@ MAKEFLAGS += --no-print-directory
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:= 
+LIBS	:= -lwums
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -62,6 +64,7 @@ LIBS	:=
 LIBDIRS	:=	$(CURDIR)	\
 			$(DEVKITPPC)/lib  \
 			$(DEVKITPRO)/wut  \
+			$(WUMS_ROOT) \
 			$(DEVKITPPC)/lib/gcc/powerpc-eabi/$(GCC_VER)
 
 

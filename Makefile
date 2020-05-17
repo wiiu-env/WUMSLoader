@@ -10,6 +10,7 @@ TOPDIR ?= $(CURDIR)
 
 include $(DEVKITPRO)/wut/share/wut_rules
 
+WUMS_ROOT := $(DEVKITPRO)/wums
 #-------------------------------------------------------------------------------
 # TARGET is the name of the output
 # BUILD is the directory where object files & intermediate files will be placed
@@ -46,7 +47,7 @@ LIBS	:= -lwut
 # list of directories containing libraries, this must be the top level
 # containing include and lib
 #-------------------------------------------------------------------------------
-LIBDIRS	:= $(PORTLIBS) $(WUT_ROOT)
+LIBDIRS	:= $(PORTLIBS) $(WUT_ROOT) $(WUMS_ROOT)
 
 
 #-------------------------------------------------------------------------------

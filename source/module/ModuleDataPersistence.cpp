@@ -26,6 +26,27 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
         }
     }
 
+    std::vector<ExportData> exportData = module.getExportDataList();
+
+    for (auto const &curExport : exportData) {
+        bool found = false;
+        for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
+            export_data_t *export_entry = &(module_data->export_entries[j]);
+            if (export_entry->address == NULL) {
+                export_entry->type = curExport.getType();
+                strncpy(export_entry->name, curExport.getName().c_str(), EXPORT_MAXIMUM_NAME_LENGTH);
+                export_entry->address = (uint32_t) curExport.getAddress();
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            DEBUG_FUNCTION_LINE("Failed to found enough exports slots");
+        }
+    }
+
+    strncpy(module_data->module_export_name, module.getExportName().c_str(), MAXIMUM_EXPORT_MODULE_NAME_LENGTH);
+
     module_data->bssAddr = module.getBSSAddr();
     module_data->bssSize = module.getBSSSize();
     module_data->sbssAddr = module.getSBSSAddr();
@@ -66,6 +87,14 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
         moduleData.setEntrypoint(module_data->entrypoint);
         moduleData.setStartAddress(module_data->startAddress);
         moduleData.setEndAddress(module_data->endAddress);
+
+        for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; i++) {
+            export_data_t *export_entry = &(module_data->export_entries[j]);
+            if (export_entry->address == NULL) {
+                continue;
+            }
+            moduleData.addExportData(ExportData(static_cast<wums_entry_type_t>(export_entry->type), export_entry->name, reinterpret_cast<const void *>(export_entry->address)));
+        }
 
         for (uint32_t j = 0; j < DYN_LINK_RELOCATION_LIST_LENGTH; j++) {
             dyn_linking_relocation_entry_t *linking_entry = &(module_data->linking_entries[j]);
