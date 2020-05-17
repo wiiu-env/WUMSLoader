@@ -61,6 +61,21 @@ public:
         return relocation_data_list;
     }
 
+    void addSectionInfo(const SectionInfo &sectionInfo) {
+        section_info_list[sectionInfo.getName()] = sectionInfo;
+    }
+
+    const std::map<std::string, SectionInfo> &getSectionInfoList() const {
+        return section_info_list;
+    }
+
+    std::optional<SectionInfo> getSectionInfo(const std::string &sectionName) const {
+        if (getSectionInfoList().count(sectionName) > 0) {
+            return section_info_list.at(sectionName);
+        }
+        return std::nullopt;
+    }
+
     uint32_t getBSSAddr() const {
         return bssAddr;
     }

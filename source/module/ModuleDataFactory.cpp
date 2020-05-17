@@ -100,6 +100,11 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t des
                 moduleData.setSBSSLocation(destination, sectionSize);
                 DEBUG_FUNCTION_LINE("Saved %s section info. Location: %08X size: %08X", psec->get_name().c_str(), destination, sectionSize);
             }
+
+            moduleData.addSectionInfo(SectionInfo(psec->get_name(), destination, sectionSize));
+            DEBUG_FUNCTION_LINE("Saved %s section info. Location: %08X size: %08X", psec->get_name().c_str(), destination, sectionSize);
+
+
             totalSize += sectionSize;
 
             if(endAddress < destination + sectionSize){
