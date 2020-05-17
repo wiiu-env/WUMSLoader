@@ -8,6 +8,7 @@ IMPORT(ICInvalidateRange);
 IMPORT(OSGetSystemInfo);
 IMPORT(MEMGetSizeForMBlockExpHeap);
 IMPORT(OSSleepTicks);
+IMPORT(OSEffectiveToPhysical);
 IMPORT(OSFatal);
 
 IMPORT_END();

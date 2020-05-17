@@ -31,7 +31,7 @@ export OBJCOPY	:=	$(PREFIX)objcopy
 TARGET		:=	relocator
 BUILD		:=	build
 BUILD_DBG	:=	$(TARGET)_dbg
-SOURCES		:=	src src/utils
+SOURCES		:=	src src/utils src/kernel
 
 DATA		:=	data
 
