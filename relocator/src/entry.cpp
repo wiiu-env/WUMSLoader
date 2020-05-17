@@ -25,19 +25,18 @@ extern "C" int _start(int argc, char **argv) {
     InitFunctionPointers();
     socket_lib_init();
     log_init();
+
     doStart(argc,argv);
 
     DEBUG_FUNCTION_LINE("Call real one\n");
-
     return ( (int (*)(int, char **))(*(unsigned int*)0x1005E040) )(argc, argv);
 }
 
-bool doRelocation(std::vector<RelocationData *> &relocData, relocation_trampolin_entry_t * tramp_data, uint32_t tramp_length) {
+bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t * tramp_data, uint32_t tramp_length) {
     for (auto const& curReloc : relocData) {
-        RelocationData * cur = curReloc;
-        std::string functionName = cur->getName();
-        std::string rplName = cur->getImportRPLInformation()->getName();
-        int32_t isData = cur->getImportRPLInformation()->isData();
+        std::string functionName = curReloc.getName();
+        std::string rplName = curReloc.getImportRPLInformation().getName();
+        int32_t isData = curReloc.getImportRPLInformation().isData();
         OSDynLoad_Module rplHandle = 0;
         OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
 
@@ -46,7 +45,7 @@ bool doRelocation(std::vector<RelocationData *> &relocData, relocation_trampolin
         if(functionAddress == 0) {
             return false;
         }
-        if(!ElfUtils::elfLinkOne(cur->getType(), cur->getOffset(), cur->getAddend(), (uint32_t) cur->getDestination(), functionAddress, tramp_data, tramp_length, RELOC_TYPE_IMPORT)) {
+        if(!ElfUtils::elfLinkOne(curReloc.getType(), curReloc.getOffset(), curReloc.getAddend(), (uint32_t) curReloc.getDestination(), functionAddress, tramp_data, tramp_length, RELOC_TYPE_IMPORT)) {
             DEBUG_FUNCTION_LINE("Relocation failed\n");
             return false;
         }
@@ -57,26 +56,25 @@ bool doRelocation(std::vector<RelocationData *> &relocData, relocation_trampolin
     return true;
 }
 bool ResolveRelocations() {
-    std::vector<ModuleData *> loadedModules = ModuleDataPersistence::loadModuleData(gModuleData);
+    std::vector<ModuleData> loadedModules = ModuleDataPersistence::loadModuleData(gModuleData);
     bool wasSuccessful = true;
     uint32_t count = 0;
     for (auto const& curModule : loadedModules) {
         if(wasSuccessful) {
-            std::vector<RelocationData *> relocData = curModule->getRelocationDataList();
+            std::vector<RelocationData> relocData = curModule.getRelocationDataList();
             if(!doRelocation(relocData, gModuleData->trampolines,DYN_LINK_TRAMPOLIN_LIST_LENGTH)) {
                 DEBUG_FUNCTION_LINE("FAIL\n");
                 wasSuccessful = false;
             }
         }
-        if(curModule->getBSSAddr() != 0){
-            DEBUG_FUNCTION_LINE("memset .bss %08X (%d)\n", curModule->getBSSAddr(), curModule->getBSSSize());
-            memset((void*)curModule->getBSSAddr(), 0, curModule->getBSSSize());
+        if(curModule.getBSSAddr() != 0){
+            DEBUG_FUNCTION_LINE("memset .bss %08X (%d)\n", curModule.getBSSAddr(), curModule.getBSSSize());
+            memset((void*)curModule.getBSSAddr(), 0, curModule.getBSSSize());
         }
-        if(curModule->getSBSSAddr() != 0){
-            DEBUG_FUNCTION_LINE("memset .sbss %08X (%d)\n", curModule->getSBSSAddr(), curModule->getSBSSSize());
-            memset((void*)curModule->getSBSSAddr(), 0, curModule->getSBSSSize());
+        if(curModule.getSBSSAddr() != 0){
+            DEBUG_FUNCTION_LINE("memset .sbss %08X (%d)\n", curModule.getSBSSAddr(), curModule.getSBSSSize());
+            memset((void*)curModule.getSBSSAddr(), 0, curModule.getSBSSSize());
         }
-        delete curModule;
     }
     if(count > 0) {
         DCFlushRange((void*) 0x00800000, 0x00800000);

@@ -12,6 +12,7 @@
 #include <coreinit/dynload.h>
 #include <whb/log.h>
 #include <whb/log_udp.h>
+#include <vector>
 
 #include "fs/DirList.h"
 #include "utils/logger.h"
@@ -49,12 +50,11 @@ static_assert(sizeof(module_information_t) <= 0x80000);
 
 extern "C" uint32_t textStart();
 
-bool doRelocation(std::vector<RelocationData *> &relocData, relocation_trampolin_entry_t * tramp_data, uint32_t tramp_length) {
+bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t * tramp_data, uint32_t tramp_length) {
     for (auto const& curReloc : relocData) {
-        RelocationData * cur = curReloc;
-        std::string functionName = cur->getName();
-        std::string rplName = cur->getImportRPLInformation()->getName();
-        int32_t isData = cur->getImportRPLInformation()->isData();
+        std::string functionName = curReloc.getName();
+        std::string rplName = curReloc.getImportRPLInformation().getName();
+        int32_t isData = curReloc.getImportRPLInformation().isData();
         OSDynLoad_Module rplHandle = 0;
         OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
 
@@ -63,7 +63,7 @@ bool doRelocation(std::vector<RelocationData *> &relocData, relocation_trampolin
         if(functionAddress == 0) {
             return false;
         }
-        if(!ElfUtils::elfLinkOne(cur->getType(), cur->getOffset(), cur->getAddend(), (uint32_t) cur->getDestination(), functionAddress, tramp_data, tramp_length, RELOC_TYPE_IMPORT)) {
+        if(!ElfUtils::elfLinkOne(curReloc.getType(), curReloc.getOffset(), curReloc.getAddend(), (uint32_t) curReloc.getDestination(), functionAddress, tramp_data, tramp_length, RELOC_TYPE_IMPORT)) {
             DEBUG_FUNCTION_LINE("Relocation failed\n");
             return false;
         }
@@ -87,13 +87,13 @@ int main(int argc, char **argv)  {
     for(int i = 0; i < setupModules.GetFilecount(); i++) {
         memset((void*)gModuleData, 0, sizeof(module_information_t));
         DEBUG_FUNCTION_LINE("Trying to run %s",setupModules.GetFilepath(i));
-        ModuleData * moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
-        if(moduleData == NULL) {
+        std::optional<ModuleData> moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        if(!moduleData) {
             DEBUG_FUNCTION_LINE("Failed to load %s", setupModules.GetFilepath(i));
             continue;
         }
         DEBUG_FUNCTION_LINE("Loaded module data");
-        std::vector<RelocationData *> relocData = moduleData->getRelocationDataList();
+        std::vector<RelocationData> relocData = moduleData->getRelocationDataList();
         if(!doRelocation(relocData, gModuleData->trampolines,DYN_LINK_TRAMPOLIN_LIST_LENGTH)) {
             DEBUG_FUNCTION_LINE("relocations failed\n");
         }
@@ -110,7 +110,6 @@ int main(int argc, char **argv)  {
         DEBUG_FUNCTION_LINE("Calling %08X", moduleData->getEntrypoint());
         ((int (*)(int, char **))moduleData->getEntrypoint())(argc, argv);
         DEBUG_FUNCTION_LINE("Back from module");
-        delete moduleData;
     }
 
     memset((void*)gModuleData, 0, sizeof(module_information_t));
@@ -121,12 +120,11 @@ int main(int argc, char **argv)  {
     for(int i = 0; i < modules.GetFilecount(); i++) {
         DEBUG_FUNCTION_LINE("Loading module %s",modules.GetFilepath(i));
 
-        ModuleData * moduleData = ModuleDataFactory::load(modules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        std::optional<ModuleData> moduleData = ModuleDataFactory::load(modules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
 
-        if(moduleData != NULL) {
+        if(moduleData) {
             DEBUG_FUNCTION_LINE("Successfully loaded %s", modules.GetFilepath(i));
-            ModuleDataPersistence::saveModuleData(gModuleData, moduleData);
-            delete moduleData;
+            ModuleDataPersistence::saveModuleData(gModuleData, moduleData.value());
         } else {
             DEBUG_FUNCTION_LINE("Failed to load %s", modules.GetFilepath(i));
         }

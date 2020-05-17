@@ -43,7 +43,7 @@ INCLUDES	:=  src
 CFLAGS	:=  -std=gnu11 -mcpu=750 -meabi -mhard-float -ffast-math \
 		    -O2 -Wall -Wextra -Wno-unused-parameter -Wno-strict-aliasing $(INCLUDE)
 CXXFLAGS := -std=gnu++11 -mcpu=750 -meabi -mhard-float -ffast-math \
-		    -O2 -Wall -Wextra -Wno-unused-parameter -Wno-strict-aliasing $(INCLUDE)
+		    -O2 -Wall -Wextra -Wno-unused-parameter -Wno-strict-aliasing  -std=c++17  $(INCLUDE)
 ASFLAGS	:= -mregnames
 LDFLAGS	:= -nostartfiles -Wl,--gc-sections
 
@@ -164,7 +164,7 @@ $(OUTPUT).elf:  $(OFILES)
 	@$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d $(CFLAGS) -c $< -o $@ $(ERROR_FILTER)
 
 #---------------------------------------------------------------------------------
-%.o: %.S
+%.o: %.s
 	@echo $(notdir $<)
 	@$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d -x assembler-with-cpp $(ASFLAGS) -c $< -o $@ $(ERROR_FILTER)
 
