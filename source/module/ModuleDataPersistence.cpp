@@ -6,21 +6,21 @@
 #include "ModuleData.h"
 #include "RelocationData.h"
 
-bool ModuleDataPersistence::saveModuleData(module_information_t * moduleInformation, const ModuleData& module) {
+bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformation, const ModuleData &module) {
     int32_t module_count = moduleInformation->number_used_modules;
 
-    if(module_count >= MAXIMUM_MODULES) {
+    if (module_count >= MAXIMUM_MODULES) {
         DEBUG_FUNCTION_LINE("Reached maximum module count of %d", MAXIMUM_MODULES);
         return false;
     }
     // Copy data to global struct.
-    module_information_single_t * module_data = &(moduleInformation->module_data[module_count]);
+    module_information_single_t *module_data = &(moduleInformation->module_data[module_count]);
 
     DEBUG_FUNCTION_LINE("Saving reloation data for module at %08X", module.getEntrypoint());
     // Relocation
     std::vector<RelocationData> relocationData = module.getRelocationDataList();
-    for (auto const& reloc : relocationData) {
-        if(!DynamicLinkingHelper::addReloationEntry(&(moduleInformation->linking_data), module_data->linking_entries, DYN_LINK_RELOCATION_LIST_LENGTH, reloc)) {
+    for (auto const &reloc : relocationData) {
+        if (!DynamicLinkingHelper::addReloationEntry(&(moduleInformation->linking_data), module_data->linking_entries, DYN_LINK_RELOCATION_LIST_LENGTH, reloc)) {
             DEBUG_FUNCTION_LINE("Failed to add relocation entry\n");
             return false;
         }
@@ -37,29 +37,29 @@ bool ModuleDataPersistence::saveModuleData(module_information_t * moduleInformat
 
     moduleInformation->number_used_modules++;
 
-    DCFlushRange((void*)moduleInformation,sizeof(module_information_t));
-    ICInvalidateRange((void*)moduleInformation,sizeof(module_information_t));
+    DCFlushRange((void *) moduleInformation, sizeof(module_information_t));
+    ICInvalidateRange((void *) moduleInformation, sizeof(module_information_t));
 
     return true;
 }
 
-std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information_t * moduleInformation) {
+std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
     std::vector<ModuleData> result;
-    if(moduleInformation == NULL) {
+    if (moduleInformation == NULL) {
         DEBUG_FUNCTION_LINE("moduleInformation == NULL\n");
         return result;
     }
-    DCFlushRange((void*)moduleInformation,sizeof(module_information_t));
-    ICInvalidateRange((void*)moduleInformation,sizeof(module_information_t));
+    DCFlushRange((void *) moduleInformation, sizeof(module_information_t));
+    ICInvalidateRange((void *) moduleInformation, sizeof(module_information_t));
 
     int32_t module_count = moduleInformation->number_used_modules;
-    if(module_count > MAXIMUM_MODULES) {
-        DEBUG_FUNCTION_LINE("moduleInformation->module_count was bigger then allowed. %d > %d. Limiting to %d\n",module_count, MAXIMUM_MODULES, MAXIMUM_MODULES);
+    if (module_count > MAXIMUM_MODULES) {
+        DEBUG_FUNCTION_LINE("moduleInformation->module_count was bigger then allowed. %d > %d. Limiting to %d\n", module_count, MAXIMUM_MODULES, MAXIMUM_MODULES);
         module_count = MAXIMUM_MODULES;
     }
-    for(int32_t i = 0; i < module_count; i++) {
+    for (int32_t i = 0; i < module_count; i++) {
         // Copy data from struct.
-        module_information_single_t * module_data = &(moduleInformation->module_data[i]);
+        module_information_single_t *module_data = &(moduleInformation->module_data[i]);
         ModuleData moduleData;
         moduleData.setBSSLocation(module_data->bssAddr, module_data->bssSize);
         moduleData.setSBSSLocation(module_data->sbssAddr, module_data->sbssSize);
@@ -67,27 +67,27 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
         moduleData.setStartAddress(module_data->startAddress);
         moduleData.setEndAddress(module_data->endAddress);
 
-        for(uint32_t j = 0; j < DYN_LINK_RELOCATION_LIST_LENGTH; j++) {
-            dyn_linking_relocation_entry_t * linking_entry = &(module_data->linking_entries[j]);
-            if(linking_entry->destination == NULL){
+        for (uint32_t j = 0; j < DYN_LINK_RELOCATION_LIST_LENGTH; j++) {
+            dyn_linking_relocation_entry_t *linking_entry = &(module_data->linking_entries[j]);
+            if (linking_entry->destination == NULL) {
                 break;
             }
-            dyn_linking_import_t* importEntry = linking_entry->importEntry;
-            if(importEntry == NULL){
+            dyn_linking_import_t *importEntry = linking_entry->importEntry;
+            if (importEntry == NULL) {
                 DEBUG_FUNCTION_LINE("importEntry was NULL, skipping relocation entry\n");
                 continue;
             }
-            if(importEntry->importName == NULL){
+            if (importEntry->importName == NULL) {
                 DEBUG_FUNCTION_LINE("importEntry->importName was NULL, skipping relocation entry\n");
                 continue;
             }
-            dyn_linking_function_t* functionEntry = linking_entry->functionEntry;
+            dyn_linking_function_t *functionEntry = linking_entry->functionEntry;
 
-            if(functionEntry == NULL){
+            if (functionEntry == NULL) {
                 DEBUG_FUNCTION_LINE("functionEntry was NULL, skipping relocation entry\n");
                 continue;
             }
-            if(functionEntry->functionName == NULL){
+            if (functionEntry->functionName == NULL) {
                 DEBUG_FUNCTION_LINE("functionEntry->functionName was NULL, skipping relocation entry\n");
                 continue;
             }

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <stdint.h>
 
 #define ADDRESS_main_entry_hook                         0x0101C56C
@@ -10,5 +11,7 @@
 #define KERN_SYSCALL_TBL_5          0xFFEAAE60 // works with browser (previously KERN_SYSCALL_TBL)
 
 void SetupRelocator();
+
 void KernelWriteU32(uint32_t addr, uint32_t value);
+
 void __attribute__ ((noinline)) kern_write(void *addr, uint32_t value);

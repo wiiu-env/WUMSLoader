@@ -81,7 +81,7 @@ void PatchSyscall(int index, uint32_t addr) {
 
 void kernelInitialize() {
     static uint8_t ucSyscallsSetupRequired = 1;
-    if (!ucSyscallsSetupRequired){
+    if (!ucSyscallsSetupRequired) {
         return;
     }
 

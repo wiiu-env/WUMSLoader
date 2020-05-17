@@ -21,15 +21,15 @@
 #include <string.h>
 #include <errno.h>
 
-extern uint32_t * pMEMAllocFromDefaultHeapEx;
-extern uint32_t * pMEMAllocFromDefaultHeap;
-extern uint32_t * pMEMFreeToDefaultHeap;
+extern uint32_t *pMEMAllocFromDefaultHeapEx;
+extern uint32_t *pMEMAllocFromDefaultHeap;
+extern uint32_t *pMEMFreeToDefaultHeap;
 
 //!-------------------------------------------------------------------------------------------
 //! reent versions
 //!-------------------------------------------------------------------------------------------
 void *_malloc_r(struct _reent *r, size_t size) {
-    void *ptr = ((void * (*)(size_t))(*pMEMAllocFromDefaultHeap))(size);
+    void *ptr = ((void *(*)(size_t)) (*pMEMAllocFromDefaultHeap))(size);
     if (!ptr) {
         r->_errno = ENOMEM;
     }
@@ -37,7 +37,7 @@ void *_malloc_r(struct _reent *r, size_t size) {
 }
 
 void *_calloc_r(struct _reent *r, size_t num, size_t size) {
-    void *ptr = ((void * (*)(size_t))(*pMEMAllocFromDefaultHeap))(size);
+    void *ptr = ((void *(*)(size_t)) (*pMEMAllocFromDefaultHeap))(size);
     if (ptr) {
         memset(ptr, 0, num * size);
     } else {
@@ -48,17 +48,17 @@ void *_calloc_r(struct _reent *r, size_t num, size_t size) {
 }
 
 void *_memalign_r(struct _reent *r, size_t align, size_t size) {
-    return ((void * (*)(size_t, size_t))(*pMEMAllocFromDefaultHeapEx))(size, align);
+    return ((void *(*)(size_t, size_t)) (*pMEMAllocFromDefaultHeapEx))(size, align);
 }
 
 void _free_r(struct _reent *r, void *ptr) {
     if (ptr) {
-        ((void (*)(void *))(*pMEMFreeToDefaultHeap))(ptr);
+        ((void (*)(void *)) (*pMEMFreeToDefaultHeap))(ptr);
     }
 }
 
 void *_realloc_r(struct _reent *r, void *p, size_t size) {
-    void *new_ptr = ((void * (*)(size_t))(*pMEMAllocFromDefaultHeap))(size);
+    void *new_ptr = ((void *(*)(size_t)) (*pMEMAllocFromDefaultHeap))(size);
     if (!new_ptr) {
         r->_errno = ENOMEM;
         return new_ptr;
@@ -67,13 +67,13 @@ void *_realloc_r(struct _reent *r, void *p, size_t size) {
     if (p) {
         size_t old_size = MEMGetSizeForMBlockExpHeap(p);
         memcpy(new_ptr, p, old_size <= size ? old_size : size);
-        ((void (*)(void *))(*pMEMFreeToDefaultHeap))(p);
+        ((void (*)(void *)) (*pMEMFreeToDefaultHeap))(p);
     }
     return new_ptr;
 }
 
 struct mallinfo _mallinfo_r(struct _reent *r) {
-    struct mallinfo info = { 0 };
+    struct mallinfo info = {0};
     return info;
 }
 
@@ -93,12 +93,12 @@ _malloc_usable_size_r(struct _reent *r, void *ptr) {
 
 void *
 _valloc_r(struct _reent *r, size_t size) {
-    return ((void * (*)(size_t, size_t))(*pMEMAllocFromDefaultHeapEx))(size, OS_PAGE_SIZE);
+    return ((void *(*)(size_t, size_t)) (*pMEMAllocFromDefaultHeapEx))(size, OS_PAGE_SIZE);
 }
 
 void *
 _pvalloc_r(struct _reent *r, size_t size) {
-    return ((void * (*)(size_t, size_t))(*pMEMAllocFromDefaultHeapEx))((size + (OS_PAGE_SIZE - 1)) & ~(OS_PAGE_SIZE - 1), OS_PAGE_SIZE);
+    return ((void *(*)(size_t, size_t)) (*pMEMAllocFromDefaultHeapEx))((size + (OS_PAGE_SIZE - 1)) & ~(OS_PAGE_SIZE - 1), OS_PAGE_SIZE);
 }
 
 int

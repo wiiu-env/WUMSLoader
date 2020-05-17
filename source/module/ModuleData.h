@@ -53,11 +53,11 @@ public:
         this->endAddress = endAddress;
     }
 
-    void addRelocationData(const RelocationData& relocation_data) {
+    void addRelocationData(const RelocationData &relocation_data) {
         relocation_data_list.push_back(relocation_data);
     }
 
-    const std::vector<RelocationData>& getRelocationDataList() const {
+    const std::vector<RelocationData> &getRelocationDataList() const {
         return relocation_data_list;
     }
 
@@ -80,31 +80,32 @@ public:
         return bssAddr;
     }
 
-    uint32_t getBSSSize() const{
+    uint32_t getBSSSize() const {
         return bssSize;
     }
 
-    uint32_t getSBSSAddr() const{
+    uint32_t getSBSSAddr() const {
         return sbssAddr;
     }
 
-    uint32_t getSBSSSize() const{
+    uint32_t getSBSSSize() const {
         return sbssSize;
     }
 
-    uint32_t getEntrypoint() const{
+    uint32_t getEntrypoint() const {
         return entrypoint;
     }
 
-    uint32_t getStartAddress() const{
+    uint32_t getStartAddress() const {
         return startAddress;
     }
 
-    uint32_t getEndAddress() const{
+    uint32_t getEndAddress() const {
         return endAddress;
     }
 
     std::string toString() const;
+
 private:
     std::vector<RelocationData> relocation_data_list;
     std::map<std::string, SectionInfo> section_info_list;

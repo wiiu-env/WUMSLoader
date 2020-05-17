@@ -40,7 +40,7 @@ public:
 
         std::string rplName = "";
 
-        if(rawSectionName.size() < fimport.size()) {
+        if (rawSectionName.size() < fimport.size()) {
             return std::nullopt;
         } else if (std::equal(fimport.begin(), fimport.end(), rawSectionName.begin())) {
             rplName = rawSectionName.substr(fimport.size());

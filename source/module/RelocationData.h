@@ -23,7 +23,7 @@
 class RelocationData {
 
 public:
-    RelocationData(char type, size_t offset, int32_t addend, void *destination, std::string name, const ImportRPLInformation& rplInfo): rplInfo(rplInfo) {
+    RelocationData(char type, size_t offset, int32_t addend, void *destination, std::string name, const ImportRPLInformation &rplInfo) : rplInfo(rplInfo) {
         this->type = type;
         this->offset = offset;
         this->addend = addend;
@@ -34,31 +34,32 @@ public:
     ~RelocationData() {
     }
 
-    char getType() const{
+    char getType() const {
         return type;
     }
 
-    size_t getOffset() const{
+    size_t getOffset() const {
         return offset;
     }
 
-    int32_t getAddend() const{
+    int32_t getAddend() const {
         return addend;
     }
 
-    void * getDestination() const{
+    void *getDestination() const {
         return destination;
     }
 
-    std::string getName() const{
+    std::string getName() const {
         return name;
     }
 
-    ImportRPLInformation getImportRPLInformation() const{
+    ImportRPLInformation getImportRPLInformation() const {
         return rplInfo;
     }
 
     std::string toString() const;
+
 private:
     char type;
     size_t offset;

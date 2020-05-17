@@ -4,6 +4,7 @@
 #define IMPORT(name) void* addr_##name
 #define IMPORT_BEGIN(lib)
 #define IMPORT_END()
+
 #include "imports.h"
 
 #undef IMPORT
@@ -23,13 +24,13 @@ EXPORT_VAR(uint32_t *, pMEMFreeToDefaultHeap);
 
 void InitFunctionPointers(void) {
     OSDynLoad_Module handle;
-    addr_OSDynLoad_Acquire = (void*) 0x0102A3B4;
-    addr_OSDynLoad_FindExport = (void*) 0x0102B828;
+    addr_OSDynLoad_Acquire = (void *) 0x0102A3B4;
+    addr_OSDynLoad_FindExport = (void *) 0x0102B828;
 
     OSDynLoad_Acquire("coreinit.rpl", &handle);
-    OSDynLoad_FindExport(handle, 1, "MEMAllocFromDefaultHeapEx", (void**) &pMEMAllocFromDefaultHeapEx);
-    OSDynLoad_FindExport(handle, 1, "MEMAllocFromDefaultHeap", (void**) &pMEMAllocFromDefaultHeap);
-    OSDynLoad_FindExport(handle, 1, "MEMFreeToDefaultHeap", (void**) &pMEMFreeToDefaultHeap);
+    OSDynLoad_FindExport(handle, 1, "MEMAllocFromDefaultHeapEx", (void **) &pMEMAllocFromDefaultHeapEx);
+    OSDynLoad_FindExport(handle, 1, "MEMAllocFromDefaultHeap", (void **) &pMEMAllocFromDefaultHeap);
+    OSDynLoad_FindExport(handle, 1, "MEMFreeToDefaultHeap", (void **) &pMEMFreeToDefaultHeap);
 
 #include "imports.h"
 
