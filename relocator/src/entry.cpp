@@ -51,9 +51,10 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
         }
         rplHandle = moduleCache.at(rplName);
         uint32_t functionAddress = 0;
+       
         OSDynLoad_FindExport(rplHandle, isData, functionName.c_str(), (void **) &functionAddress);
         if (functionAddress == 0) {
-            DEBUG_FUNCTION_LINE("Failed to find function\n");
+            OSFatal_printf("Failed to find export %s of %s", functionName.c_str(), rplName.c_str());
             return false;
         }
         if (!ElfUtils::elfLinkOne(curReloc.getType(), curReloc.getOffset(), curReloc.getAddend(), (uint32_t) curReloc.getDestination(), functionAddress, tramp_data, tramp_length, RELOC_TYPE_IMPORT)) {
