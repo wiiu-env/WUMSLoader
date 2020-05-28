@@ -228,7 +228,7 @@ std::vector<RelocationData> ModuleDataFactory::getImportRelocationData(elfio &re
                 }
 
                 uint32_t adjusted_sym_value = (uint32_t) sym_value;
-                if (adjusted_sym_value < 0xC0000000) {
+                if(infoMap.count(sym_section_index) == 0){
                     continue;
                 }
                 std::optional<ImportRPLInformation> rplInfo = ImportRPLInformation::createImportRPLInformation(infoMap[sym_section_index]);
