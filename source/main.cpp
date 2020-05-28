@@ -87,7 +87,8 @@ int main(int argc, char **argv) {
     for (int i = 0; i < setupModules.GetFilecount(); i++) {
         memset((void *) gModuleData, 0, sizeof(module_information_t));
         DEBUG_FUNCTION_LINE("Trying to run %s", setupModules.GetFilepath(i));
-        std::optional<ModuleData> moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        uint32_t destination_address = 0x00900000;
+        std::optional<ModuleData> moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), &destination_address, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
         if (!moduleData) {
             DEBUG_FUNCTION_LINE("Failed to load %s", setupModules.GetFilepath(i));
             continue;
@@ -116,11 +117,11 @@ int main(int argc, char **argv) {
 
     DirList modules("fs:/vol/external01/wiiu/modules", ".wms", DirList::Files, 1);
     modules.SortList();
-
+    uint32_t destination_address = 0x00900000;
     for (int i = 0; i < modules.GetFilecount(); i++) {
         DEBUG_FUNCTION_LINE("Loading module %s", modules.GetFilepath(i));
 
-        std::optional<ModuleData> moduleData = ModuleDataFactory::load(modules.GetFilepath(i), 0x00900000, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        std::optional<ModuleData> moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, 0x01000000 - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
 
         if (moduleData) {
             DEBUG_FUNCTION_LINE("Successfully loaded %s", modules.GetFilepath(i));

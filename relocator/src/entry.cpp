@@ -51,7 +51,7 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
         }
         rplHandle = moduleCache.at(rplName);
         uint32_t functionAddress = 0;
-       
+
         OSDynLoad_FindExport(rplHandle, isData, functionName.c_str(), (void **) &functionAddress);
         if (functionAddress == 0) {
             OSFatal_printf("Failed to find export %s of %s", functionName.c_str(), rplName.c_str());

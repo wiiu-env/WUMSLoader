@@ -29,7 +29,7 @@
 
 using namespace ELFIO;
 
-std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t destination_address, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
+std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t* destination_address_ptr, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
     elfio reader;
     ModuleData moduleData;
 
@@ -43,7 +43,7 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t des
 
     uint8_t **destinations = (uint8_t **) malloc(sizeof(uint8_t *) * sec_num);
 
-    uint32_t baseOffset = destination_address;
+    uint32_t baseOffset = *destination_address_ptr;
 
     uint32_t offset_text = baseOffset;
     uint32_t offset_data = offset_text;
@@ -181,17 +181,19 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t des
         }
     }
 
-    DCFlushRange((void*)destination_address, totalSize);
-    ICInvalidateRange((void*)destination_address, totalSize);
+    DCFlushRange((void*)*destination_address_ptr, totalSize);
+    ICInvalidateRange((void*)*destination_address_ptr, totalSize);
 
     free(destinations);
 
     moduleData.setEntrypoint(entrypoint);
-    moduleData.setStartAddress(destination_address);
+    moduleData.setStartAddress(*destination_address_ptr);
     moduleData.setEndAddress(endAddress);
     DEBUG_FUNCTION_LINE("Saved entrypoint as %08X", entrypoint);
-    DEBUG_FUNCTION_LINE("Saved startAddress as %08X", destination_address);
+    DEBUG_FUNCTION_LINE("Saved startAddress as %08X", *destination_address_ptr);
     DEBUG_FUNCTION_LINE("Saved endAddress as %08X", endAddress);
+
+    *destination_address_ptr = (*destination_address_ptr + totalSize + 0x100) & 0xFFFFFF00;
 
     return moduleData;
 }
