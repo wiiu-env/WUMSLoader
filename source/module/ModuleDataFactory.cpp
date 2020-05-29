@@ -26,6 +26,7 @@
 #include "ElfUtils.h"
 #include "SectionInfo.h"
 #include "ExportData.h"
+#include "HookData.h"
 
 using namespace ELFIO;
 
@@ -144,6 +145,20 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t* de
                 DEBUG_FUNCTION_LINE("Saving export of type %08X, name %s, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, exp->type, exp->name, (void *)  exp->address);
                 ExportData export_data(exp->type, exp->name, exp->address);
                 moduleData.addExportData(export_data);
+            }
+        }
+    }
+
+    secInfo = moduleData.getSectionInfo(".wums.hooks");
+    if (secInfo && secInfo->getSize() > 0) {
+        size_t entries_count = secInfo->getSize() / sizeof(wums_hook_t);
+        wums_hook_t *hooks = (wums_hook_t *) secInfo->getAddress();
+        if (hooks != NULL) {
+            for (size_t j = 0; j < entries_count; j++) {
+                wums_hook_t * hook = &hooks[j];
+                DEBUG_FUNCTION_LINE("Saving hook of type %08X, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, hook->type, hook->target);
+                HookData hook_data(hook->type, hook->target);
+                moduleData.addHookData(hook_data);
             }
         }
     }

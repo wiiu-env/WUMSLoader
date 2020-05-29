@@ -43,6 +43,15 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
             }
             moduleData.addExportData(ExportData(static_cast<wums_entry_type_t>(export_entry->type), export_entry->name, reinterpret_cast<const void *>(export_entry->address)));
         }
+
+        for (uint32_t j = 0; j < HOOK_ENTRY_LIST_LENGTH; j++) {
+            hook_data_t *hook_entry = &(module_data->hook_entries[j]);
+            if (hook_entry->target == NULL) {
+                continue;
+            }
+            moduleData.addHookData(HookData(static_cast<wums_hook_type_t>(hook_entry->type), reinterpret_cast<const void *>(hook_entry->target)));
+        }
+
         for (uint32_t j = 0; j < DYN_LINK_RELOCATION_LIST_LENGTH; j++) {
             dyn_linking_relocation_entry_t *linking_entry = &(module_data->linking_entries[j]);
             if (linking_entry->destination == NULL) {

@@ -27,7 +27,6 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     }
 
     std::vector<ExportData> exportData = module.getExportDataList();
-
     for (auto const &curExport : exportData) {
         bool found = false;
         for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
@@ -42,6 +41,25 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
         }
         if (!found) {
             DEBUG_FUNCTION_LINE("Failed to found enough exports slots");
+            break;
+        }
+    }
+
+    std::vector<HookData> hookData = module.getHookDataList();
+    for (auto const &curHook : hookData) {
+        bool found = false;
+        for (uint32_t j = 0; j < HOOK_ENTRY_LIST_LENGTH; j++) {
+            hook_data_t *hook_entry = &(module_data->hook_entries[j]);
+            if (hook_entry->target == NULL) {
+                hook_entry->type = curHook.getType();
+                hook_entry->target = (uint32_t) curHook.getTarget();
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            DEBUG_FUNCTION_LINE("Failed to found enough hook slots");
+            break;
         }
     }
 
@@ -96,6 +114,14 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
                 continue;
             }
             moduleData.addExportData(ExportData(static_cast<wums_entry_type_t>(export_entry->type), export_entry->name, reinterpret_cast<const void *>(export_entry->address)));
+        }
+
+        for (uint32_t j = 0; j < HOOK_ENTRY_LIST_LENGTH; j++) {
+            hook_data_t *hook_entry = &(module_data->hook_entries[j]);
+            if (hook_entry->target == NULL) {
+                continue;
+            }
+            moduleData.addHookData(HookData(static_cast<wums_hook_type_t>(hook_entry->type), reinterpret_cast<const void *>(hook_entry->target)));
         }
 
         for (uint32_t j = 0; j < DYN_LINK_RELOCATION_LIST_LENGTH; j++) {

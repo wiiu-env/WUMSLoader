@@ -23,6 +23,7 @@
 #include "RelocationData.h"
 #include "SectionInfo.h"
 #include "ExportData.h"
+#include "HookData.h"
 
 class ModuleData {
 public:
@@ -68,6 +69,13 @@ public:
 
     const std::vector<ExportData> &getExportDataList() const {
         return export_data_list;
+    }
+    void addHookData(const HookData &data) {
+        hook_data_list.push_back(data);
+    }
+
+    const std::vector<HookData> &getHookDataList() const {
+        return hook_data_list;
     }
 
     void addSectionInfo(const SectionInfo &sectionInfo) {
@@ -126,6 +134,7 @@ public:
 private:
     std::vector<RelocationData> relocation_data_list;
     std::vector<ExportData> export_data_list;
+    std::vector<HookData> hook_data_list;
     std::map<std::string, SectionInfo> section_info_list;
 
     std::string export_name;

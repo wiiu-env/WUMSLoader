@@ -118,6 +118,7 @@ int main(int argc, char **argv) {
     DirList modules("fs:/vol/external01/wiiu/modules", ".wms", DirList::Files, 1);
     modules.SortList();
     uint32_t destination_address = 0x00900000;
+
     for (int i = 0; i < modules.GetFilecount(); i++) {
         DEBUG_FUNCTION_LINE("Loading module %s", modules.GetFilepath(i));
 
