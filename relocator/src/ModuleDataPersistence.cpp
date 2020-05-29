@@ -65,6 +65,8 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
         moduleData.setStartAddress(module_data->startAddress);
         moduleData.setEndAddress(module_data->endAddress);
 
+
+        moduleData.setExportName(module_data->module_export_name);
         for (uint32_t j = 0; j < DYN_LINK_RELOCATION_LIST_LENGTH; j++) {
             dyn_linking_relocation_entry_t *linking_entry = &(module_data->linking_entries[j]);
             if (linking_entry->destination == NULL) {

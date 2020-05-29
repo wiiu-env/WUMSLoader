@@ -88,6 +88,8 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
         moduleData.setStartAddress(module_data->startAddress);
         moduleData.setEndAddress(module_data->endAddress);
 
+        moduleData.setExportName(module_data->module_export_name);
+
         for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
             export_data_t *export_entry = &(module_data->export_entries[j]);
             if (export_entry->address == NULL) {
