@@ -7,6 +7,7 @@
 #include <nsysnet/socket.h>
 #include <coreinit/memorymap.h>
 #include <map>
+#include <algorithm>
 #include "../../source/common/dynamic_linking_defines.h"
 #include "../../source/common/module_defines.h"
 #include "../../source/module/RelocationData.h"
@@ -23,6 +24,9 @@
 #define gModuleData ((module_information_t *) (0x00880000))
 
 uint8_t gFunctionsPatched __attribute__((section(".data"))) = 0;
+uint8_t gInitCalled __attribute__((section(".data"))) = 0;
+
+void CallInitHook(const std::vector<ModuleData> &loadedModules);
 
 extern "C" void doStart(int argc, char **argv);
 // We need to wrap it to make sure the main function is called AFTER our code.
@@ -68,8 +72,7 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
     return true;
 }
 
-bool ResolveRelocations() {
-    std::vector<ModuleData> loadedModules = ModuleDataPersistence::loadModuleData(gModuleData);
+bool ResolveRelocations(const std::vector<ModuleData> &loadedModules) {
     bool wasSuccessful = true;
     uint32_t count = 0;
     for (auto const &curModule : loadedModules) {
@@ -100,12 +103,83 @@ extern "C" void doStart(int argc, char **argv) {
         kernelInitialize();
         PatchInvidualMethodHooks(method_hooks_hooks_static, method_hooks_size_hooks_static, method_calls_hooks_static);
     }
+    DEBUG_FUNCTION_LINE("Loading module data\n");
+    std::vector<ModuleData> loadedModules = ModuleDataPersistence::loadModuleData(gModuleData);
+
     DEBUG_FUNCTION_LINE("Resolve relocations\n");
     DEBUG_FUNCTION_LINE("Number of modules %d\n", gModuleData->number_used_modules);
-    ResolveRelocations();
+    ResolveRelocations(loadedModules);
+
+    if (!gInitCalled) {
+        gInitCalled = 1;
+        CallInitHook(loadedModules);
+    }
+
     for (int i = 0; i < gModuleData->number_used_modules; i++) {
         DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
         int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
         DEBUG_FUNCTION_LINE("return code was %d\n", ret);
+    }
+}
+
+void CallInitHook(const std::vector<ModuleData> &loadedModules) {
+    std::vector<std::string> loadedModulesExportNames;
+    std::vector<uint32_t> loadedModulesEntrypoints;
+
+    while (true) {
+        bool canBreak = true;
+        bool weDidSomething = false;
+        for (auto const &curModule : loadedModules) {
+            if (std::find(loadedModulesEntrypoints.begin(), loadedModulesEntrypoints.end(), curModule.getEntrypoint()) != loadedModulesEntrypoints.end()) {
+                DEBUG_FUNCTION_LINE("%s [%08X] is already loaded\n", curModule.getExportName().c_str(), curModule.getEntrypoint());
+                continue;
+            }
+            canBreak = false;
+            DEBUG_FUNCTION_LINE("Missing %s\n", curModule.getExportName().c_str());
+            std::vector<std::string> importsFromOtherModules;
+            for (auto curReloc: curModule.getRelocationDataList()) {
+                std::string curRPL = curReloc.getImportRPLInformation().getName();
+                if (curRPL.rfind("homebrew", 0) == 0) {
+                    if (std::find(importsFromOtherModules.begin(), importsFromOtherModules.end(), curRPL) != importsFromOtherModules.end()) {
+                        // is already in vector
+                    } else {
+                        DEBUG_FUNCTION_LINE("%s is importing from %s\n", curModule.getExportName().c_str(), curRPL.c_str());
+                        importsFromOtherModules.push_back(curRPL);
+                    }
+                }
+            }
+            bool canLoad = true;
+            for (auto &curImportRPL : importsFromOtherModules) {
+                if (std::find(loadedModulesExportNames.begin(), loadedModulesExportNames.end(), curImportRPL) != loadedModulesExportNames.end()) {
+
+                } else {
+                    DEBUG_FUNCTION_LINE("We can't load the module, because %s is not loaded yet\n", curImportRPL.c_str());
+                    canLoad = false;
+                    break;
+                }
+            }
+            if (canLoad) {
+                weDidSomething = true;
+                DEBUG_FUNCTION_LINE("We can load %s\n", curModule.getExportName().c_str());
+                for (auto &curHook : curModule.getHookDataList()) {
+                    if (curHook.getType() == WUMS_HOOK_INIT) {
+                        uint32_t func_ptr = (uint32_t) curHook.getTarget();
+                        if (func_ptr == NULL) {
+                            DEBUG_FUNCTION_LINE("Hook ptr was NULL\n");
+                        } else {
+                            DEBUG_FUNCTION_LINE("Calling init of %s\n", curModule.getExportName().c_str());
+                            ((void (*)(void)) ((uint32_t *) func_ptr))();
+                        }
+                    }
+                }
+                loadedModulesExportNames.push_back(curModule.getExportName());
+                loadedModulesEntrypoints.push_back(curModule.getEntrypoint());
+            }
+        }
+        if (canBreak) {
+            break;
+        } else if (!weDidSomething) {
+            OSFatal_printf("Failed to resolve dependencies.");
+        }
     }
 }
