@@ -4,6 +4,7 @@
 #include "../../source/module/ModuleData.h"
 #include "../../source/module/RelocationData.h"
 #include <coreinit/cache.h>
+#include <wums.h>
 
 std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
     std::vector<ModuleData> result;
@@ -34,6 +35,14 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
 
 
         moduleData.setExportName(module_data->module_export_name);
+
+        for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
+            export_data_t *export_entry = &(module_data->export_entries[j]);
+            if (export_entry->address == NULL) {
+                continue;
+            }
+            moduleData.addExportData(ExportData(static_cast<wums_entry_type_t>(export_entry->type), export_entry->name, reinterpret_cast<const void *>(export_entry->address)));
+        }
         for (uint32_t j = 0; j < DYN_LINK_RELOCATION_LIST_LENGTH; j++) {
             dyn_linking_relocation_entry_t *linking_entry = &(module_data->linking_entries[j]);
             if (linking_entry->destination == NULL) {
