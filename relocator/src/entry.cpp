@@ -89,10 +89,8 @@ bool ResolveRelocations() {
             memset((void *) curModule.getSBSSAddr(), 0, curModule.getSBSSSize());
         }
     }
-    if (count > 0) {
-        DCFlushRange((void *) 0x00800000, 0x00800000);
-        ICInvalidateRange((void *) 0x00800000, 0x00800000);
-    }
+    DCFlushRange((void *) 0x00800000, 0x00800000);
+    ICInvalidateRange((void *) 0x00800000, 0x00800000);
     return wasSuccessful;
 }
 
