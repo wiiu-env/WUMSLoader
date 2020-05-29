@@ -5,39 +5,6 @@
 #include "../../source/module/RelocationData.h"
 #include <coreinit/cache.h>
 
-bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformation, const ModuleData &module) {
-    int32_t module_count = moduleInformation->number_used_modules;
-
-    if (module_count >= MAXIMUM_MODULES) {
-        return false;
-    }
-    // Copy data to global struct.
-    module_information_single_t *module_data = &(moduleInformation->module_data[module_count]);
-
-    // Relocation
-    std::vector<RelocationData> relocationData = module.getRelocationDataList();
-    for (auto const &reloc : relocationData) {
-        if (!DynamicLinkingHelper::addReloationEntry(&(moduleInformation->linking_data), module_data->linking_entries, DYN_LINK_RELOCATION_LIST_LENGTH, reloc)) {
-            return false;
-        }
-    }
-
-    module_data->bssAddr = module.getBSSAddr();
-    module_data->bssSize = module.getBSSSize();
-    module_data->sbssAddr = module.getSBSSAddr();
-    module_data->sbssSize = module.getSBSSSize();
-    module_data->endAddress = module.getStartAddress();
-    module_data->startAddress = module.getEndAddress();
-
-    module_data->entrypoint = module.getEntrypoint();
-
-    moduleInformation->number_used_modules++;
-
-    DCFlushRange((void *) moduleInformation, sizeof(module_information_t));
-    ICInvalidateRange((void *) moduleInformation, sizeof(module_information_t));
-    return true;
-}
-
 std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
     std::vector<ModuleData> result;
     if (moduleInformation == NULL) {
