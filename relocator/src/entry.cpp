@@ -131,9 +131,20 @@ extern "C" void doStart(int argc, char **argv) {
     }
 
     for (int i = 0; i < gModuleData->number_used_modules; i++) {
-        DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
-        int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
-        DEBUG_FUNCTION_LINE("return code was %d\n", ret);
+        if(strcmp(gModuleData->module_data[i].module_export_name, "homebrew_memorymapping") == 0){
+            DEBUG_FUNCTION_LINE("About to call memory mapping (%08X)\n", gModuleData->module_data[i].entrypoint);
+            int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
+            DEBUG_FUNCTION_LINE("return code was %d\n", ret);
+            break;
+        }
+    }
+
+    for (int i = 0; i < gModuleData->number_used_modules; i++) {
+        if(strcmp(gModuleData->module_data[i].module_export_name, "homebrew_memorymapping") != 0) {
+            DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
+            int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
+            DEBUG_FUNCTION_LINE("return code was %d\n", ret);
+        }
     }
 }
 
