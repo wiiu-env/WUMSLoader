@@ -11,7 +11,7 @@ DECL(OSDynLoad_Error, OSDynLoad_Acquire, char const *name, OSDynLoad_Module *out
     if (result == OS_DYNLOAD_OK) {
         return OS_DYNLOAD_OK;
     }
-    DEBUG_FUNCTION_LINE("Looking for module %s\n", name);
+    // DEBUG_FUNCTION_LINE("Looking for module %s\n", name);
     for (uint32_t i = 0; i < MAXIMUM_MODULES; i++) {
         if (strncmp(name, gModuleData->module_data[i].module_export_name, MAXIMUM_EXPORT_MODULE_NAME_LENGTH) == 0) {
             *outModule = (OSDynLoad_Module) (0x13370000 + i);
@@ -28,7 +28,7 @@ DECL(OSDynLoad_Error, OSDynLoad_FindExport, OSDynLoad_Module module, BOOL isData
         return OS_DYNLOAD_OK;
     }
 
-    DEBUG_FUNCTION_LINE("Looking for %s in handle %d\n", name);
+    // DEBUG_FUNCTION_LINE("Looking for %s in handle %d\n", name);
     if (((uint32_t) module & 0xFFFF0000) == 0x13370000) {
         uint32_t modulehandle = ((uint32_t) module) & 0x0000FFFF;
         if (modulehandle > MAXIMUM_MODULES) {
@@ -41,7 +41,7 @@ DECL(OSDynLoad_Error, OSDynLoad_FindExport, OSDynLoad_Module module, BOOL isData
                     return OS_DYNLOAD_INVALID_MODULE_NAME;
                 }
                 *outAddr = (void *) exportEntries[i].address;
-                DEBUG_FUNCTION_LINE("Set outAddr to %08X. It's from module %s function %s\n",
+                // DEBUG_FUNCTION_LINE("Set outAddr to %08X. It's from module %s function %s\n",
                                     exportEntries[i].address,
                                     gModuleData->module_data[modulehandle].module_export_name,
                                     exportEntries[i].name);
