@@ -60,7 +60,7 @@ OSDynLoad_Module vpadbase_handle_internal = 0;
 void PatchInvidualMethodHooks(hooks_magic_t method_hooks[], int32_t hook_information_size, volatile uint32_t dynamic_method_calls[]) {
     resetLibs();
 
-    DEBUG_FUNCTION_LINE("Patching %d given functions", hook_information_size);
+    DEBUG_FUNCTION_LINE("Patching %d given functions\n", hook_information_size);
     /* Patch branches to it.  */
     volatile uint32_t *space = &dynamic_method_calls[0];
 
@@ -173,10 +173,10 @@ void PatchInvidualMethodHooks(hooks_magic_t method_hooks[], int32_t hook_informa
         ICInvalidateRange((void *) (real_addr), 4);
 
         method_hooks[i].alreadyPatched = 1;
-        DEBUG_FUNCTION_LINE("done!\n");
+        log_printf("done!\n");
 
     }
-    DEBUG_FUNCTION_LINE("Done with patching given functions!");
+    DEBUG_FUNCTION_LINE("Done with patching given functions!\n");
 }
 
 /* ****************************************************************** */
