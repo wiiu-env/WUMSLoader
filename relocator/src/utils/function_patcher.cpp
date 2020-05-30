@@ -67,8 +67,8 @@ void PatchInvidualMethodHooks(hooks_magic_t method_hooks[], int32_t hook_informa
     int32_t method_hooks_count = hook_information_size;
 
     uint32_t skip_instr = 1;
-    uint32_t my_instr_len = 6;
-    uint32_t instr_len = my_instr_len + skip_instr;
+    uint32_t my_instr_len = 4;
+    uint32_t instr_len = my_instr_len + skip_instr + 4;
     uint32_t flush_len = 4 * instr_len;
     for (int32_t i = 0; i < method_hooks_count; i++) {
         DEBUG_FUNCTION_LINE("Patching %s ...", method_hooks[i].functionName);
@@ -99,12 +99,15 @@ void PatchInvidualMethodHooks(hooks_magic_t method_hooks[], int32_t hook_informa
         if (DEBUG_LOG_DYN) {
             DEBUG_FUNCTION_LINE("%s is located at %08X!", method_hooks[i].functionName, real_addr);
         }
-
-        physical = (uint32_t) OSEffectiveToPhysical(real_addr);
-        if (!physical) {
-            DEBUG_FUNCTION_LINE("Error. Something is wrong with the physical address\n");
-            space += instr_len;
-            continue;
+        if(real_addr > 0xF0000000){
+            physical = real_addr;
+        }else{
+            physical = (uint32_t) OSEffectiveToPhysical(real_addr);
+            if (!physical) {
+                DEBUG_FUNCTION_LINE("Error. Something is wrong with the physical address\n");
+                space += instr_len;
+                continue;
+            }
         }
 
         if (DEBUG_LOG_DYN) {
@@ -144,29 +147,30 @@ void PatchInvidualMethodHooks(hooks_magic_t method_hooks[], int32_t hook_informa
 
         //adding jump to real function thx @ dimok for the assembler code
         /*
-            90 61 ff e0     stw     r3,-32(r1)
-            3c 60 12 34     lis     r3,4660
-            60 63 56 78     ori     r3,r3,22136
-            7c 69 03 a6     mtctr   r3
-            80 61 ff e0     lwz     r3,-32(r1)
-            4e 80 04 20     bctr*/
-        *space = 0x9061FFE0;
-        space++;
-        *space = 0x3C600000 | (((real_addr + (skip_instr * 4)) >> 16) & 0x0000FFFF); // lis r3, real_addr@h
-        space++;
-        *space = 0x60630000 | ((real_addr + (skip_instr * 4)) & 0x0000ffff); // ori r3, r3, real_addr@l
-        space++;
-        *space = 0x7C6903A6; // mtctr   r3
-        space++;
-        *space = 0x8061FFE0; // lwz     r3,-32(r1)
-        space++;
-        *space = 0x4E800420; // bctr
-        space++;
+       00808cfc 3d601234      lis        r11 ,0x1234
+       00808d00 616b5678      ori        r11 ,r11 ,0x5678
+       00808d04 7d6903a6      mtspr      CTR ,r11
+       00808d08 4e800420      bctr
+        */
+        uint32_t ptr = (uint32_t)space;
+        *space = 0x3d600000 | (((real_addr + (skip_instr * 4)) >> 16) & 0x0000FFFF); space++;   // lis        r11 ,0x1234
+        *space = 0x616b0000 | ((real_addr + (skip_instr * 4)) & 0x0000ffff); space++;           // ori        r11 ,r11 ,0x5678
+        *space = 0x7d6903a6; space++;                                                           // mtspr      CTR ,r11
+        *space = 0x4e800420; space++;
+
+        // Only use patched function if OSGetUPID is 2 (wii u menu) or 15 (game)
+        uint32_t repl_addr_test = (uint32_t) space;
+
+        *space = 0x3d600000 | (((repl_addr) >> 16) & 0x0000FFFF); space++;                      // lis        r11 ,0x1234
+        *space = 0x616b0000 | ((repl_addr) & 0x0000ffff); space++;                              // ori        r11 ,r11 ,0x5678
+        *space = 0x7d6903a6; space++;                                                           // mtspr      CTR ,r11
+        *space = 0x4e800420; space++;                                                           // bctr
+
+
         DCFlushRange((void *) (space - instr_len), flush_len);
         ICInvalidateRange((unsigned char *) (space - instr_len), flush_len);
-
         //setting jump back
-        uint32_t replace_instr = 0x48000002 | (repl_addr & 0x03fffffc);
+        uint32_t replace_instr = 0x48000002 | (repl_addr_test & 0x03fffffc);
         DCFlushRange(&replace_instr, 4);
 
         KernelCopyData(physical, (uint32_t) OSEffectiveToPhysical((uint32_t) &replace_instr), 4);
