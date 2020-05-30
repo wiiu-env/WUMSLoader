@@ -20,6 +20,7 @@
 
 #include "utils/logger.h"
 #include "utils/dynamic.h"
+#include "globals.h"
 
 #define gModuleData ((module_information_t *) (0x00880000))
 
@@ -113,6 +114,20 @@ extern "C" void doStart(int argc, char **argv) {
     if (!gInitCalled) {
         gInitCalled = 1;
         CallInitHook(loadedModules);
+        for(auto&  curModule : loadedModules){
+            if(curModule.getExportName().compare("homebrew_memorymapping") == 0){
+                for(auto& curExport : curModule.getExportDataList()){
+                    if(curExport.getName().compare("MemoryMappingEffectiveToPhysical") == 0){
+                        DEBUG_FUNCTION_LINE("Setting MemoryMappingEffectiveToPhysicalPTR to %08X\n", curExport.getAddress());
+                        MemoryMappingEffectiveToPhysicalPTR = (uint32_t) curExport.getAddress();
+                    }else if(curExport.getName().compare("MemoryMappingPhysicalToEffective") == 0){
+                        DEBUG_FUNCTION_LINE("Setting MemoryMappingPhysicalToEffectivePTR to %08X\n", curExport.getAddress());
+                        MemoryMappingPhysicalToEffectivePTR = (uint32_t) curExport.getAddress();
+                    }
+                }
+                break;
+            }
+        }
     }
 
     for (int i = 0; i < gModuleData->number_used_modules; i++) {
