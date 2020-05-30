@@ -43,24 +43,45 @@ extern "C" int _start(int argc, char **argv) {
     return ((int (*)(int, char **)) (*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
-bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length) {
+bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length, bool replaceAllocFunctions) {
     std::map<std::string, OSDynLoad_Module> moduleCache;
     for (auto const &curReloc : relocData) {
         std::string functionName = curReloc.getName();
         std::string rplName = curReloc.getImportRPLInformation().getName();
-        int32_t isData = curReloc.getImportRPLInformation().isData();
-        OSDynLoad_Module rplHandle = 0;
-        if (moduleCache.count(rplName) == 0) {
-            OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
-            moduleCache[rplName] = rplHandle;
-        }
-        rplHandle = moduleCache.at(rplName);
         uint32_t functionAddress = 0;
 
-        OSDynLoad_FindExport(rplHandle, isData, functionName.c_str(), (void **) &functionAddress);
-        if (functionAddress == 0) {
-            OSFatal_printf("Failed to find export %s of %s", functionName.c_str(), rplName.c_str());
-            return false;
+        if (replaceAllocFunctions) {
+            if(functionName.compare("MEMAllocFromDefaultHeap") == 0){
+                OSDynLoad_Module rplHandle;
+                OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
+                OSDynLoad_FindExport(rplHandle, 1, "MEMAllocFromMappedMemory", (void **) &functionAddress);
+            }else if(functionName.compare("MEMAllocFromDefaultHeapEx") == 0){
+                OSDynLoad_Module rplHandle;
+                OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
+                OSDynLoad_FindExport(rplHandle, 1, "MEMAllocFromMappedMemoryEx", (void **) &functionAddress);
+            }else if(functionName.compare("MEMFreeToDefaultHeap") == 0){
+                OSDynLoad_Module rplHandle;
+                OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
+                OSDynLoad_FindExport(rplHandle, 1, "MEMFreeToMappedMemory", (void **) &functionAddress);
+            }
+            if(functionAddress != 0){
+                // DEBUG_FUNCTION_LINE("Using memorymapping function %08X %08X\n", functionAddress, *((uint32_t*)functionAddress));
+            }
+        }
+        if(functionAddress == 0){
+            int32_t isData = curReloc.getImportRPLInformation().isData();
+            OSDynLoad_Module rplHandle = 0;
+            if (moduleCache.count(rplName) == 0) {
+                OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+                moduleCache[rplName] = rplHandle;
+            }
+            rplHandle = moduleCache.at(rplName);
+
+            OSDynLoad_FindExport(rplHandle, isData, functionName.c_str(), (void **) &functionAddress);
+            if (functionAddress == 0) {
+                OSFatal_printf("Failed to find export %s of %s", functionName.c_str(), rplName.c_str());
+                return false;
+            }
         }
         if (!ElfUtils::elfLinkOne(curReloc.getType(), curReloc.getOffset(), curReloc.getAddend(), (uint32_t) curReloc.getDestination(), functionAddress, tramp_data, tramp_length, RELOC_TYPE_IMPORT)) {
             DEBUG_FUNCTION_LINE("Relocation failed\n");
@@ -73,13 +94,22 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
     return true;
 }
 
-bool ResolveRelocations(const std::vector<ModuleData> &loadedModules) {
+bool ResolveRelocations(const std::vector<ModuleData> &loadedModules, bool replaceAllocFunctions) {
     bool wasSuccessful = true;
     uint32_t count = 0;
+
     for (auto const &curModule : loadedModules) {
+        DEBUG_FUNCTION_LINE("Let's do the relocations for %s\n", curModule.getExportName().c_str());
         if (wasSuccessful) {
             std::vector<RelocationData> relocData = curModule.getRelocationDataList();
-            if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH)) {
+            bool replaceAlloc = replaceAllocFunctions;
+            if(replaceAlloc){
+                if(curModule.getExportName().compare("homebrew_memorymapping") == 0){
+                    DEBUG_FUNCTION_LINE("Skip malloc replacement for mapping\n");
+                    replaceAlloc = false;
+                }
+            }
+            if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH, replaceAlloc)) {
                 DEBUG_FUNCTION_LINE("FAIL\n");
                 wasSuccessful = false;
             }
@@ -107,12 +137,11 @@ extern "C" void doStart(int argc, char **argv) {
     DEBUG_FUNCTION_LINE("Loading module data\n");
     std::vector<ModuleData> loadedModules = ModuleDataPersistence::loadModuleData(gModuleData);
 
-    DEBUG_FUNCTION_LINE("Resolve relocations\n");
     DEBUG_FUNCTION_LINE("Number of modules %d\n", gModuleData->number_used_modules);
-    ResolveRelocations(loadedModules);
-
     if (!gInitCalled) {
         gInitCalled = 1;
+        DEBUG_FUNCTION_LINE("Resolve relocations without replacing alloc functions\n");
+        ResolveRelocations(loadedModules, false);
         CallInitHook(loadedModules);
         for(auto&  curModule : loadedModules){
             if(curModule.getExportName().compare("homebrew_memorymapping") == 0){
@@ -129,6 +158,9 @@ extern "C" void doStart(int argc, char **argv) {
             }
         }
     }
+
+    DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions\n");
+    ResolveRelocations(loadedModules, true);
 
     for (int i = 0; i < gModuleData->number_used_modules; i++) {
         if(strcmp(gModuleData->module_data[i].module_export_name, "homebrew_memorymapping") == 0){
