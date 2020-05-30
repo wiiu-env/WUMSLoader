@@ -1,6 +1,7 @@
 #include "utils/logger.h"
 #include "utils/function_patcher.h"
 #include "../../source/common/module_defines.h"
+#include "globals.h"
 #include <malloc.h>
 #include <coreinit/dynload.h>
 
@@ -52,9 +53,54 @@ DECL(OSDynLoad_Error, OSDynLoad_FindExport, OSDynLoad_Module module, BOOL isData
     return result;
 }
 
+DECL(int32_t, KiEffectiveToPhysical, uint32_t addressSpace, uint32_t virtualAddress) {
+    int32_t result = real_KiEffectiveToPhysical(addressSpace, virtualAddress);
+    if (result == 0) {
+        if(MemoryMappingEffectiveToPhysicalPTR != 0){
+            return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingEffectiveToPhysicalPTR))(virtualAddress);
+        }
+    }
+    return result;
+}
+
+DECL(int32_t, KiPhysicalToEffectiveCached, uint32_t addressSpace, uint32_t virtualAddress) {
+    int32_t result = real_KiPhysicalToEffectiveCached(addressSpace, virtualAddress);
+    if (result == 0) {
+        if(MemoryMappingPhysicalToEffectivePTR != 0){
+            return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingPhysicalToEffectivePTR))(virtualAddress);
+        }
+    }
+    return result;
+}
+
+DECL(int32_t, KiPhysicalToEffectiveUncached, uint32_t addressSpace, uint32_t virtualAddress) {
+    int32_t result = real_KiPhysicalToEffectiveUncached(addressSpace, virtualAddress);
+    if (result == 0) {
+        if(MemoryMappingPhysicalToEffectivePTR != 0){
+            return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingPhysicalToEffectivePTR))(virtualAddress);
+        }
+    }
+    return result;
+}
+
+DECL(int32_t, IPCKDriver_ValidatePhysicalAddress, uint32_t u1, uint32_t physStart, uint32_t physEnd) {
+    int32_t result = real_IPCKDriver_ValidatePhysicalAddress(u1, physStart, physEnd);
+    if (result == 0) {
+        if(MemoryMappingPhysicalToEffectivePTR != 0){
+            return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingPhysicalToEffectivePTR))(physStart) > 0;
+        }
+        return 1;
+    }
+    return result;
+}
+
 hooks_magic_t method_hooks_hooks_static[] __attribute__((section(".data"))) = {
-        MAKE_MAGIC(OSDynLoad_Acquire, LIB_CORE_INIT, STATIC_FUNCTION),
-        MAKE_MAGIC(OSDynLoad_FindExport, LIB_CORE_INIT, STATIC_FUNCTION)
+        MAKE_MAGIC(KiEffectiveToPhysical,               LIB_CORE_INIT, STATIC_FUNCTION),
+        MAKE_MAGIC(KiPhysicalToEffectiveCached,         LIB_CORE_INIT, STATIC_FUNCTION),
+        MAKE_MAGIC(KiPhysicalToEffectiveUncached,       LIB_CORE_INIT, STATIC_FUNCTION),
+        MAKE_MAGIC(IPCKDriver_ValidatePhysicalAddress,  LIB_CORE_INIT, STATIC_FUNCTION),
+        MAKE_MAGIC(OSDynLoad_Acquire,                   LIB_CORE_INIT, STATIC_FUNCTION),
+        MAKE_MAGIC(OSDynLoad_FindExport,                LIB_CORE_INIT, STATIC_FUNCTION)
 };
 
 uint32_t method_hooks_size_hooks_static __attribute__((section(".data"))) = sizeof(method_hooks_hooks_static) / sizeof(hooks_magic_t);

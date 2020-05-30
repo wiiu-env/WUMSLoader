@@ -247,6 +247,14 @@ int32_t isDynamicFunction(uint32_t physicalAddress) {
 uint32_t GetAddressOfFunction(const char *functionName, uint32_t library) {
     uint32_t real_addr = 0;
 
+    if(strcmp(functionName, "KiEffectiveToPhysical") == 0){
+        return 0xffee0aac;
+    }else if(strcmp(functionName, "KiPhysicalToEffectiveCached") == 0){
+        return 0xffee0a3c;
+    }else if(strcmp(functionName, "IPCKDriver_ValidatePhysicalAddress") == 0){
+        return 0xfff0cb5c;
+    }
+
     OSDynLoad_Module rpl_handle = 0;
     if (library == LIB_CORE_INIT) {
         if (DEBUG_LOG_DYN) {
