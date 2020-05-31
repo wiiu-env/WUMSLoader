@@ -253,6 +253,8 @@ uint32_t GetAddressOfFunction(const char *functionName, uint32_t library) {
         return 0xffee0a3c;
     }else if(strcmp(functionName, "IPCKDriver_ValidatePhysicalAddress") == 0){
         return 0xfff0cb5c;
+    }else if(strcmp(functionName, "KiIsEffectiveRangeValid") == 0){
+        return 0xffee0d6c;
     }
 
     OSDynLoad_Module rpl_handle = 0;

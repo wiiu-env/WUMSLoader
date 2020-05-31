@@ -95,10 +95,20 @@ DECL(uint32_t, IPCKDriver_ValidatePhysicalAddress, uint32_t u1, uint32_t physSta
     return real_IPCKDriver_ValidatePhysicalAddress(u1, physStart, physEnd);
 }
 
+DECL(uint32_t, KiIsEffectiveRangeValid, uint32_t addressSpace, uint32_t virtualAddress, uint32_t size) {
+    uint32_t result = real_KiIsEffectiveRangeValid(addressSpace, virtualAddress, size);
+    if (result == 0) {
+        if(MemoryMappingEffectiveToPhysicalPTR != 0){
+            return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingEffectiveToPhysicalPTR))(virtualAddress);
+        }
+    }
+    return result;
+}
 hooks_magic_t method_hooks_hooks_static[] __attribute__((section(".data"))) = {
         MAKE_MAGIC(KiEffectiveToPhysical,               LIB_CORE_INIT, STATIC_FUNCTION),
         MAKE_MAGIC(KiPhysicalToEffectiveCached,         LIB_CORE_INIT, STATIC_FUNCTION),
         MAKE_MAGIC(KiPhysicalToEffectiveUncached,       LIB_CORE_INIT, STATIC_FUNCTION),
+        MAKE_MAGIC(KiIsEffectiveRangeValid,             LIB_CORE_INIT, STATIC_FUNCTION),
         MAKE_MAGIC(IPCKDriver_ValidatePhysicalAddress,  LIB_CORE_INIT, STATIC_FUNCTION),
         MAKE_MAGIC(OSDynLoad_Acquire,                   LIB_CORE_INIT, STATIC_FUNCTION),
         MAKE_MAGIC(OSDynLoad_FindExport,                LIB_CORE_INIT, STATIC_FUNCTION)
