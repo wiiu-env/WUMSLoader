@@ -42,10 +42,10 @@ DECL(OSDynLoad_Error, OSDynLoad_FindExport, OSDynLoad_Module module, BOOL isData
                     return OS_DYNLOAD_INVALID_MODULE_NAME;
                 }
                 *outAddr = (void *) exportEntries[i].address;
-                // DEBUG_FUNCTION_LINE("Set outAddr to %08X. It's from module %s function %s\n",
+                /*DEBUG_FUNCTION_LINE("Set outAddr to %08X. It's from module %s function %s\n",
                                     exportEntries[i].address,
                                     gModuleData->module_data[modulehandle].module_export_name,
-                                    exportEntries[i].name);
+                                    exportEntries[i].name);*/
                 return OS_DYNLOAD_OK;
             }
         }
