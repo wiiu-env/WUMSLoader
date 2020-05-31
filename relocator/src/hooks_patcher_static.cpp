@@ -83,15 +83,16 @@ DECL(int32_t, KiPhysicalToEffectiveUncached, uint32_t addressSpace, uint32_t vir
     return result;
 }
 
-DECL(int32_t, IPCKDriver_ValidatePhysicalAddress, uint32_t u1, uint32_t physStart, uint32_t physEnd) {
-    int32_t result = real_IPCKDriver_ValidatePhysicalAddress(u1, physStart, physEnd);
-    if (result == 0) {
-        if(MemoryMappingPhysicalToEffectivePTR != 0){
-            return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingPhysicalToEffectivePTR))(physStart) > 0;
-        }
-        return 1;
+DECL(uint32_t, IPCKDriver_ValidatePhysicalAddress, uint32_t u1, uint32_t physStart, uint32_t physEnd) {
+    uint32_t result = 0;
+    if(MemoryMappingPhysicalToEffectivePTR != 0){
+        result = ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingPhysicalToEffectivePTR))(physStart) > 0;
     }
-    return result;
+    if(result){
+        return result;
+    }
+
+    return real_IPCKDriver_ValidatePhysicalAddress(u1, physStart, physEnd);
 }
 
 hooks_magic_t method_hooks_hooks_static[] __attribute__((section(".data"))) = {
