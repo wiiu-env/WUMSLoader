@@ -99,7 +99,7 @@ DECL(uint32_t, KiIsEffectiveRangeValid, uint32_t addressSpace, uint32_t virtualA
     uint32_t result = real_KiIsEffectiveRangeValid(addressSpace, virtualAddress, size);
     if (result == 0) {
         if(MemoryMappingEffectiveToPhysicalPTR != 0){
-            return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingEffectiveToPhysicalPTR))(virtualAddress);
+            return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingEffectiveToPhysicalPTR))(virtualAddress) > 0;
         }
     }
     return result;
