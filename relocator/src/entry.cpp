@@ -21,13 +21,14 @@
 #include "utils/logger.h"
 #include "utils/dynamic.h"
 #include "globals.h"
+#include "hooks.h"
 
 #define gModuleData ((module_information_t *) (0x00880000))
 
 uint8_t gFunctionsPatched __attribute__((section(".data"))) = 0;
 uint8_t gInitCalled __attribute__((section(".data"))) = 0;
 
-void CallInitHook(const std::vector<ModuleData> &loadedModules);
+std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData> &loadedModules);
 
 extern "C" void doStart(int argc, char **argv);
 // We need to wrap it to make sure the main function is called AFTER our code.
@@ -135,18 +136,21 @@ extern "C" void doStart(int argc, char **argv) {
         PatchInvidualMethodHooks(method_hooks_hooks_static, method_hooks_size_hooks_static, method_calls_hooks_static);
     }
     DEBUG_FUNCTION_LINE("Loading module data\n");
-    std::vector<ModuleData> loadedModules = ModuleDataPersistence::loadModuleData(gModuleData);
+    std::vector<ModuleData> loadedModulesUnordered = ModuleDataPersistence::loadModuleData(gModuleData);
+    std::vector<ModuleData> loadedModules = OrderModulesByDependencies(loadedModulesUnordered);
 
     DEBUG_FUNCTION_LINE("Number of modules %d\n", gModuleData->number_used_modules);
     if (!gInitCalled) {
         gInitCalled = 1;
         DEBUG_FUNCTION_LINE("Resolve relocations without replacing alloc functions\n");
         ResolveRelocations(loadedModules, false);
-        CallInitHook(loadedModules);
         for(auto&  curModule : loadedModules){
             if(curModule.getExportName().compare("homebrew_memorymapping") == 0){
                 for(auto& curExport : curModule.getExportDataList()){
                     if(curExport.getName().compare("MemoryMappingEffectiveToPhysical") == 0){
+
+        CallHook(loadedModules, WUMS_HOOK_INIT);
+
                         DEBUG_FUNCTION_LINE("Setting MemoryMappingEffectiveToPhysicalPTR to %08X\n", curExport.getAddress());
                         MemoryMappingEffectiveToPhysicalPTR = (uint32_t) curExport.getAddress();
                     }else if(curExport.getName().compare("MemoryMappingPhysicalToEffective") == 0){
@@ -180,7 +184,8 @@ extern "C" void doStart(int argc, char **argv) {
     }
 }
 
-void CallInitHook(const std::vector<ModuleData> &loadedModules) {
+std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData> &loadedModules) {
+    std::vector<ModuleData> finalOrder;
     std::vector<std::string> loadedModulesExportNames;
     std::vector<uint32_t> loadedModulesEntrypoints;
 
@@ -218,18 +223,7 @@ void CallInitHook(const std::vector<ModuleData> &loadedModules) {
             }
             if (canLoad) {
                 weDidSomething = true;
-                DEBUG_FUNCTION_LINE("We can load %s\n", curModule.getExportName().c_str());
-                for (auto &curHook : curModule.getHookDataList()) {
-                    if (curHook.getType() == WUMS_HOOK_INIT) {
-                        uint32_t func_ptr = (uint32_t) curHook.getTarget();
-                        if (func_ptr == NULL) {
-                            DEBUG_FUNCTION_LINE("Hook ptr was NULL\n");
-                        } else {
-                            DEBUG_FUNCTION_LINE("Calling init of %s\n", curModule.getExportName().c_str());
-                            ((void (*)(void)) ((uint32_t *) func_ptr))();
-                        }
-                    }
-                }
+                finalOrder.push_back(curModule);
                 loadedModulesExportNames.push_back(curModule.getExportName());
                 loadedModulesEntrypoints.push_back(curModule.getEntrypoint());
             }
@@ -240,4 +234,5 @@ void CallInitHook(const std::vector<ModuleData> &loadedModules) {
             OSFatal_printf("Failed to resolve dependencies.");
         }
     }
+    return finalOrder;
 }
