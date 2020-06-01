@@ -99,9 +99,9 @@ void PatchInvidualMethodHooks(hooks_magic_t method_hooks[], int32_t hook_informa
         if (DEBUG_LOG_DYN) {
             DEBUG_FUNCTION_LINE("%s is located at %08X!", method_hooks[i].functionName, real_addr);
         }
-        if(real_addr > 0xF0000000){
+        if (real_addr > 0xF0000000) {
             physical = real_addr;
-        }else{
+        } else {
             physical = (uint32_t) OSEffectiveToPhysical(real_addr);
             if (!physical) {
                 DEBUG_FUNCTION_LINE("Error. Something is wrong with the physical address\n");
@@ -247,15 +247,15 @@ int32_t isDynamicFunction(uint32_t physicalAddress) {
 uint32_t GetAddressOfFunction(const char *functionName, uint32_t library) {
     uint32_t real_addr = 0;
 
-    if(strcmp(functionName, "KiEffectiveToPhysical") == 0){
+    if (strcmp(functionName, "KiEffectiveToPhysical") == 0) {
         return 0xffee0aac;
-    }else if(strcmp(functionName, "KiPhysicalToEffectiveCached") == 0){
+    } else if (strcmp(functionName, "KiPhysicalToEffectiveCached") == 0) {
         return 0xffee0a3c;
-    }else if(strcmp(functionName, "KiPhysicalToEffectiveUncached") == 0){
+    } else if (strcmp(functionName, "KiPhysicalToEffectiveUncached") == 0) {
         return 0xffee0a80;
-    }else if(strcmp(functionName, "IPCKDriver_ValidatePhysicalAddress") == 0){
+    } else if (strcmp(functionName, "IPCKDriver_ValidatePhysicalAddress") == 0) {
         return 0xfff0cb5c;
-    }else if(strcmp(functionName, "KiIsEffectiveRangeValid") == 0){
+    } else if (strcmp(functionName, "KiIsEffectiveRangeValid") == 0) {
         return 0xffee0d6c;
     }
 

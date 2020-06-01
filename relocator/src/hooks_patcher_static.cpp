@@ -56,7 +56,7 @@ DECL(OSDynLoad_Error, OSDynLoad_FindExport, OSDynLoad_Module module, BOOL isData
 DECL(int32_t, KiEffectiveToPhysical, uint32_t addressSpace, uint32_t virtualAddress) {
     int32_t result = real_KiEffectiveToPhysical(addressSpace, virtualAddress);
     if (result == 0) {
-        if(MemoryMappingEffectiveToPhysicalPTR != 0){
+        if (MemoryMappingEffectiveToPhysicalPTR != 0) {
             return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingEffectiveToPhysicalPTR))(virtualAddress);
         }
     }
@@ -66,7 +66,7 @@ DECL(int32_t, KiEffectiveToPhysical, uint32_t addressSpace, uint32_t virtualAddr
 DECL(int32_t, KiPhysicalToEffectiveCached, uint32_t addressSpace, uint32_t virtualAddress) {
     int32_t result = real_KiPhysicalToEffectiveCached(addressSpace, virtualAddress);
     if (result == 0) {
-        if(MemoryMappingPhysicalToEffectivePTR != 0){
+        if (MemoryMappingPhysicalToEffectivePTR != 0) {
             return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingPhysicalToEffectivePTR))(virtualAddress);
         }
     }
@@ -76,7 +76,7 @@ DECL(int32_t, KiPhysicalToEffectiveCached, uint32_t addressSpace, uint32_t virtu
 DECL(int32_t, KiPhysicalToEffectiveUncached, uint32_t addressSpace, uint32_t virtualAddress) {
     int32_t result = real_KiPhysicalToEffectiveUncached(addressSpace, virtualAddress);
     if (result == 0) {
-        if(MemoryMappingPhysicalToEffectivePTR != 0){
+        if (MemoryMappingPhysicalToEffectivePTR != 0) {
             return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingPhysicalToEffectivePTR))(virtualAddress);
         }
     }
@@ -85,10 +85,10 @@ DECL(int32_t, KiPhysicalToEffectiveUncached, uint32_t addressSpace, uint32_t vir
 
 DECL(uint32_t, IPCKDriver_ValidatePhysicalAddress, uint32_t u1, uint32_t physStart, uint32_t physEnd) {
     uint32_t result = 0;
-    if(MemoryMappingPhysicalToEffectivePTR != 0){
+    if (MemoryMappingPhysicalToEffectivePTR != 0) {
         result = ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingPhysicalToEffectivePTR))(physStart) > 0;
     }
-    if(result){
+    if (result) {
         return result;
     }
 
@@ -98,7 +98,8 @@ DECL(uint32_t, IPCKDriver_ValidatePhysicalAddress, uint32_t u1, uint32_t physSta
 DECL(uint32_t, KiIsEffectiveRangeValid, uint32_t addressSpace, uint32_t virtualAddress, uint32_t size) {
     uint32_t result = real_KiIsEffectiveRangeValid(addressSpace, virtualAddress, size);
     if (result == 0) {
-        if(MemoryMappingEffectiveToPhysicalPTR != 0){
+        return 1;
+        if (MemoryMappingEffectiveToPhysicalPTR != 0) {
             return ((uint32_t (*)(uint32_t)) ((uint32_t *) MemoryMappingEffectiveToPhysicalPTR))(virtualAddress) > 0;
         }
     }

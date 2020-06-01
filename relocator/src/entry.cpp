@@ -52,24 +52,24 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
         uint32_t functionAddress = 0;
 
         if (replaceAllocFunctions) {
-            if(functionName.compare("MEMAllocFromDefaultHeap") == 0){
+            if (functionName.compare("MEMAllocFromDefaultHeap") == 0) {
                 OSDynLoad_Module rplHandle;
                 OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
                 OSDynLoad_FindExport(rplHandle, 1, "MEMAllocFromMappedMemory", (void **) &functionAddress);
-            }else if(functionName.compare("MEMAllocFromDefaultHeapEx") == 0){
+            } else if (functionName.compare("MEMAllocFromDefaultHeapEx") == 0) {
                 OSDynLoad_Module rplHandle;
                 OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
                 OSDynLoad_FindExport(rplHandle, 1, "MEMAllocFromMappedMemoryEx", (void **) &functionAddress);
-            }else if(functionName.compare("MEMFreeToDefaultHeap") == 0){
+            } else if (functionName.compare("MEMFreeToDefaultHeap") == 0) {
                 OSDynLoad_Module rplHandle;
                 OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
                 OSDynLoad_FindExport(rplHandle, 1, "MEMFreeToMappedMemory", (void **) &functionAddress);
             }
-            if(functionAddress != 0){
+            if (functionAddress != 0) {
                 // DEBUG_FUNCTION_LINE("Using memorymapping function %08X %08X\n", functionAddress, *((uint32_t*)functionAddress));
             }
         }
-        if(functionAddress == 0){
+        if (functionAddress == 0) {
             int32_t isData = curReloc.getImportRPLInformation().isData();
             OSDynLoad_Module rplHandle = 0;
             if (moduleCache.count(rplName) == 0) {
@@ -104,8 +104,8 @@ bool ResolveRelocations(const std::vector<ModuleData> &loadedModules, bool repla
         if (wasSuccessful) {
             std::vector<RelocationData> relocData = curModule.getRelocationDataList();
             bool replaceAlloc = replaceAllocFunctions;
-            if(replaceAlloc){
-                if(curModule.getExportName().compare("homebrew_memorymapping") == 0){
+            if (replaceAlloc) {
+                if (curModule.getExportName().compare("homebrew_memorymapping") == 0) {
                     DEBUG_FUNCTION_LINE("Skip malloc replacement for mapping\n");
                     replaceAlloc = false;
                 }
@@ -144,16 +144,16 @@ extern "C" void doStart(int argc, char **argv) {
         gInitCalled = 1;
         DEBUG_FUNCTION_LINE("Resolve relocations without replacing alloc functions\n");
         ResolveRelocations(loadedModules, false);
-        for(auto&  curModule : loadedModules){
-            if(curModule.getExportName().compare("homebrew_memorymapping") == 0){
-                for(auto& curExport : curModule.getExportDataList()){
-                    if(curExport.getName().compare("MemoryMappingEffectiveToPhysical") == 0){
+        for (auto &curModule : loadedModules) {
+            if (curModule.getExportName().compare("homebrew_memorymapping") == 0) {
+                for (auto &curExport : curModule.getExportDataList()) {
+                    if (curExport.getName().compare("MemoryMappingEffectiveToPhysical") == 0) {
 
-        CallHook(loadedModules, WUMS_HOOK_INIT);
+                        CallHook(loadedModules, WUMS_HOOK_INIT);
 
                         DEBUG_FUNCTION_LINE("Setting MemoryMappingEffectiveToPhysicalPTR to %08X\n", curExport.getAddress());
                         MemoryMappingEffectiveToPhysicalPTR = (uint32_t) curExport.getAddress();
-                    }else if(curExport.getName().compare("MemoryMappingPhysicalToEffective") == 0){
+                    } else if (curExport.getName().compare("MemoryMappingPhysicalToEffective") == 0) {
                         DEBUG_FUNCTION_LINE("Setting MemoryMappingPhysicalToEffectivePTR to %08X\n", curExport.getAddress());
                         MemoryMappingPhysicalToEffectivePTR = (uint32_t) curExport.getAddress();
                     }
@@ -167,7 +167,7 @@ extern "C" void doStart(int argc, char **argv) {
     ResolveRelocations(loadedModules, true);
 
     for (int i = 0; i < gModuleData->number_used_modules; i++) {
-        if(strcmp(gModuleData->module_data[i].module_export_name, "homebrew_memorymapping") == 0){
+        if (strcmp(gModuleData->module_data[i].module_export_name, "homebrew_memorymapping") == 0) {
             DEBUG_FUNCTION_LINE("About to call memory mapping (%08X)\n", gModuleData->module_data[i].entrypoint);
             int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
             DEBUG_FUNCTION_LINE("return code was %d\n", ret);
@@ -176,7 +176,7 @@ extern "C" void doStart(int argc, char **argv) {
     }
 
     for (int i = 0; i < gModuleData->number_used_modules; i++) {
-        if(strcmp(gModuleData->module_data[i].module_export_name, "homebrew_memorymapping") != 0) {
+        if (strcmp(gModuleData->module_data[i].module_export_name, "homebrew_memorymapping") != 0) {
             DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
             int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
             DEBUG_FUNCTION_LINE("return code was %d\n", ret);
