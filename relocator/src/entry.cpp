@@ -143,13 +143,13 @@ extern "C" void doStart(int argc, char **argv) {
         gInitCalled = 1;
         DEBUG_FUNCTION_LINE("Resolve relocations without replacing alloc functions\n");
         ResolveRelocations(loadedModules, false);
+
+        CallHook(loadedModules, WUMS_HOOK_INIT);
+
         for (auto &curModule : loadedModules) {
             if (curModule.getExportName().compare("homebrew_memorymapping") == 0) {
                 for (auto &curExport : curModule.getExportDataList()) {
                     if (curExport.getName().compare("MemoryMappingEffectiveToPhysical") == 0) {
-
-                        CallHook(loadedModules, WUMS_HOOK_INIT);
-
                         DEBUG_FUNCTION_LINE("Setting MemoryMappingEffectiveToPhysicalPTR to %08X\n", curExport.getAddress());
                         MemoryMappingEffectiveToPhysicalPTR = (uint32_t) curExport.getAddress();
                     } else if (curExport.getName().compare("MemoryMappingPhysicalToEffective") == 0) {
