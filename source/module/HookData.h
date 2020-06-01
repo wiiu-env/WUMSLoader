@@ -9,7 +9,7 @@ public:
         this->target = target;
     }
 
-    const wums_hook_type_t getType() const {
+    wums_hook_type_t getType() const {
         return type;
     }
 

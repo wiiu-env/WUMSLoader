@@ -97,7 +97,6 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
 
 bool ResolveRelocations(const std::vector<ModuleData> &loadedModules, bool replaceAllocFunctions) {
     bool wasSuccessful = true;
-    uint32_t count = 0;
 
     for (auto const &curModule : loadedModules) {
         DEBUG_FUNCTION_LINE("Let's do the relocations for %s\n", curModule.getExportName().c_str());

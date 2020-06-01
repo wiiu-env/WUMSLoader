@@ -46,11 +46,11 @@ public:
         return name;
     }
 
-    const uint32_t getAddress() const {
+    uint32_t getAddress() const {
         return address;
     }
 
-    const uint32_t getSize() const {
+    uint32_t getSize() const {
         return sectionSize;
     }
 

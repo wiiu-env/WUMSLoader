@@ -20,7 +20,7 @@ void CallHook(const std::vector<ModuleData> &modules, wums_hook_type_t type) {
                 curHook.getType() == WUMS_HOOK_INIT_WUT ||
                 curHook.getType() == WUMS_HOOK_FINI_WUT) {
                 uint32_t func_ptr = (uint32_t) curHook.getTarget();
-                if (func_ptr == NULL) {
+                if (func_ptr == 0) {
                     DEBUG_FUNCTION_LINE("Hook ptr was NULL\n");
                 } else {
                     DEBUG_FUNCTION_LINE("Calling for module [%s]\n", curModule.getExportName().c_str());

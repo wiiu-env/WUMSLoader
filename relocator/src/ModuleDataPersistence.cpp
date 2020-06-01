@@ -38,7 +38,7 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
 
         for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
             export_data_t *export_entry = &(module_data->export_entries[j]);
-            if (export_entry->address == NULL) {
+            if (export_entry->address == 0) {
                 continue;
             }
             moduleData.addExportData(ExportData(static_cast<wums_entry_type_t>(export_entry->type), export_entry->name, reinterpret_cast<const void *>(export_entry->address)));
@@ -46,7 +46,7 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
 
         for (uint32_t j = 0; j < HOOK_ENTRY_LIST_LENGTH; j++) {
             hook_data_t *hook_entry = &(module_data->hook_entries[j]);
-            if (hook_entry->target == NULL) {
+            if (hook_entry->target == 0) {
                 continue;
             }
             moduleData.addHookData(HookData(static_cast<wums_hook_type_t>(hook_entry->type), reinterpret_cast<const void *>(hook_entry->target)));

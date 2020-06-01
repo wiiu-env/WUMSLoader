@@ -11,7 +11,7 @@ public:
         this->address = address;
     }
 
-    const wums_entry_type_t getType() const {
+    wums_entry_type_t getType() const {
         return type;
     }
 

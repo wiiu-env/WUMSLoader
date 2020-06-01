@@ -31,7 +31,7 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
         bool found = false;
         for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
             export_data_t *export_entry = &(module_data->export_entries[j]);
-            if (export_entry->address == NULL) {
+            if (export_entry->address == 0) {
                 export_entry->type = curExport.getType();
                 strncpy(export_entry->name, curExport.getName().c_str(), EXPORT_MAXIMUM_NAME_LENGTH);
                 export_entry->address = (uint32_t) curExport.getAddress();
@@ -50,7 +50,7 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
         bool found = false;
         for (uint32_t j = 0; j < HOOK_ENTRY_LIST_LENGTH; j++) {
             hook_data_t *hook_entry = &(module_data->hook_entries[j]);
-            if (hook_entry->target == NULL) {
+            if (hook_entry->target == 0) {
                 hook_entry->type = curHook.getType();
                 hook_entry->target = (uint32_t) curHook.getTarget();
                 found = true;
