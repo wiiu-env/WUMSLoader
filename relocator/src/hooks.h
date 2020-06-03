@@ -6,3 +6,4 @@
 #include "../../source/module/ModuleData.h"
 
 void CallHook(const std::vector<ModuleData> &modules, wums_hook_type_t type);
+void CallHook(const ModuleData &module, wums_hook_type_t type);

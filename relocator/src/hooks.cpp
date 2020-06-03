@@ -11,21 +11,27 @@ static const char **hook_names = (const char *[]) {
         "WUMS_HOOK_FINI_WUT"};
 
 void CallHook(const std::vector<ModuleData> &modules, wums_hook_type_t type) {
-    DEBUG_FUNCTION_LINE("Calling hook of type %s [%d]", hook_names[type], type);
+    DEBUG_FUNCTION_LINE("Calling hook of type %s [%d] for all modules\n", hook_names[type], type);
     for (auto &curModule: modules) {
-        for (auto &curHook : curModule.getHookDataList()) {
-            if ((type == WUMS_HOOK_INIT ||
-                 type == WUMS_HOOK_APPLICATION_STARTS ||
-                 type == WUMS_HOOK_APPLICATION_ENDS ||
-                 type == WUMS_HOOK_INIT_WUT ||
-                 type == WUMS_HOOK_FINI_WUT) && curHook.getType() == type) {
-                uint32_t func_ptr = (uint32_t) curHook.getTarget();
-                if (func_ptr == 0) {
-                    DEBUG_FUNCTION_LINE("Hook ptr was NULL\n");
-                } else {
-                    DEBUG_FUNCTION_LINE("Calling for module [%s]\n", curModule.getExportName().c_str());
-                    ((void (*)(void)) ((uint32_t *) func_ptr))();
-                }
+        CallHook(curModule, type);
+    }
+}
+
+
+void CallHook(const ModuleData &module, wums_hook_type_t type) {
+    for (auto &curHook : module.getHookDataList()) {
+        if ((type == WUMS_HOOK_INIT ||
+             type == WUMS_HOOK_APPLICATION_STARTS ||
+             type == WUMS_HOOK_APPLICATION_ENDS ||
+             type == WUMS_HOOK_INIT_WUT ||
+             type == WUMS_HOOK_FINI_WUT) &&
+            type == curHook.getType()) {
+            uint32_t func_ptr = (uint32_t) curHook.getTarget();
+            if (func_ptr == 0) {
+                DEBUG_FUNCTION_LINE("Hook ptr was NULL\n");
+            } else {
+                DEBUG_FUNCTION_LINE("Calling hook of type %s [%d] %d for %s \n", hook_names[type], type, curHook.getType(), module.getExportName().c_str());
+                ((void (*)(void)) ((uint32_t *) func_ptr))();
             }
         }
     }
