@@ -14,11 +14,11 @@ void CallHook(const std::vector<ModuleData> &modules, wums_hook_type_t type) {
     DEBUG_FUNCTION_LINE("Calling hook of type %s [%d]", hook_names[type], type);
     for (auto &curModule: modules) {
         for (auto &curHook : curModule.getHookDataList()) {
-            if (curHook.getType() == WUMS_HOOK_INIT ||
-                curHook.getType() == WUMS_HOOK_APPLICATION_STARTS ||
-                curHook.getType() == WUMS_HOOK_APPLICATION_ENDS ||
-                curHook.getType() == WUMS_HOOK_INIT_WUT ||
-                curHook.getType() == WUMS_HOOK_FINI_WUT) {
+            if ((type == WUMS_HOOK_INIT ||
+                 type == WUMS_HOOK_APPLICATION_STARTS ||
+                 type == WUMS_HOOK_APPLICATION_ENDS ||
+                 type == WUMS_HOOK_INIT_WUT ||
+                 type == WUMS_HOOK_FINI_WUT) && curHook.getType() == type) {
                 uint32_t func_ptr = (uint32_t) curHook.getTarget();
                 if (func_ptr == 0) {
                     DEBUG_FUNCTION_LINE("Hook ptr was NULL\n");
