@@ -115,12 +115,12 @@ bool ResolveRelocations(const std::vector<ModuleData> &loadedModules, bool repla
             }
         }
         if (curModule.getBSSAddr() != 0) {
-            DEBUG_FUNCTION_LINE("memset .bss %08X (%d)\n", curModule.getBSSAddr(), curModule.getBSSSize());
-            memset((void *) curModule.getBSSAddr(), 0, curModule.getBSSSize());
+            // DEBUG_FUNCTION_LINE("memset .bss %08X (%d)\n", curModule.getBSSAddr(), curModule.getBSSSize());
+            // memset((void *) curModule.getBSSAddr(), 0, curModule.getBSSSize());
         }
         if (curModule.getSBSSAddr() != 0) {
-            DEBUG_FUNCTION_LINE("memset .sbss %08X (%d)\n", curModule.getSBSSAddr(), curModule.getSBSSSize());
-            memset((void *) curModule.getSBSSAddr(), 0, curModule.getSBSSSize());
+            // DEBUG_FUNCTION_LINE("memset .sbss %08X (%d)\n", curModule.getSBSSAddr(), curModule.getSBSSSize());
+            // memset((void *) curModule.getSBSSAddr(), 0, curModule.getSBSSSize());
         }
     }
     DCFlushRange((void *) 0x00800000, 0x00800000);
@@ -141,11 +141,29 @@ extern "C" void doStart(int argc, char **argv) {
     DEBUG_FUNCTION_LINE("Number of modules %d\n", gModuleData->number_used_modules);
     if (!gInitCalled) {
         gInitCalled = 1;
+
         DEBUG_FUNCTION_LINE("Resolve relocations without replacing alloc functions\n");
         ResolveRelocations(loadedModules, false);
 
-        CallHook(loadedModules, WUMS_HOOK_INIT);
+        DEBUG_FUNCTION_LINE("Try to call kernel init\n");
+        // Call init hook of kernel
+        for (auto &curModule : loadedModules) {
+            if (curModule.getExportName().compare("homebrew_kernel") == 0) {
+                CallHook(curModule, WUMS_HOOK_INIT);
+                break;
+            }
+        }
 
+        DEBUG_FUNCTION_LINE("Try to call memory mapping init\n");
+        // Call init hook of memory mapping
+        for (auto &curModule : loadedModules) {
+            if (curModule.getExportName().compare("homebrew_memorymapping") == 0) {
+                CallHook(curModule, WUMS_HOOK_INIT);
+                break;
+            }
+        }
+
+        DEBUG_FUNCTION_LINE("Save mem mapping functions\n");
         for (auto &curModule : loadedModules) {
             if (curModule.getExportName().compare("homebrew_memorymapping") == 0) {
                 for (auto &curExport : curModule.getExportDataList()) {
@@ -160,27 +178,31 @@ extern "C" void doStart(int argc, char **argv) {
                 break;
             }
         }
-    }
 
-    DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions\n");
-    ResolveRelocations(loadedModules, true);
+        DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions\n");
+        ResolveRelocations(loadedModules, true);
 
-    for (int i = 0; i < gModuleData->number_used_modules; i++) {
-        if (strcmp(gModuleData->module_data[i].module_export_name, "homebrew_memorymapping") == 0) {
-            DEBUG_FUNCTION_LINE("About to call memory mapping (%08X)\n", gModuleData->module_data[i].entrypoint);
-            int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
-            DEBUG_FUNCTION_LINE("return code was %d\n", ret);
-            break;
-        }
-    }
-
-    for (int i = 0; i < gModuleData->number_used_modules; i++) {
-        if (strcmp(gModuleData->module_data[i].module_export_name, "homebrew_memorymapping") != 0) {
+        for (int i = 0; i < gModuleData->number_used_modules; i++) {
             DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
             int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
             DEBUG_FUNCTION_LINE("return code was %d\n", ret);
         }
+
+        for (auto &curModule : loadedModules) {
+            if ((curModule.getExportName().compare("homebrew_memorymapping") != 0) &&
+                (curModule.getExportName().compare("homebrew_kernel") != 0)) {
+                CallHook(curModule, WUMS_HOOK_INIT);
+            }
+        }
+    } else {
+        DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions\n");
+        ResolveRelocations(loadedModules, true);
     }
+
+    // CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
+    // CallHook(loadedModules, WUMS_HOOK_INIT_WUT);
+
+    CallHook(loadedModules, WUMS_HOOK_APPLICATION_STARTS);
 }
 
 std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData> &loadedModules) {
