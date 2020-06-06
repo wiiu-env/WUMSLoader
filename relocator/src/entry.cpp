@@ -20,8 +20,6 @@
 #include "globals.h"
 #include "hooks.h"
 
-#define gModuleData ((module_information_t *) (0x00880000))
-
 uint8_t gFunctionsPatched __attribute__((section(".data"))) = 0;
 uint8_t gInitCalled __attribute__((section(".data"))) = 0;
 
