@@ -12,8 +12,6 @@
 #include "../../source/module/ModuleData.h"
 #include "ModuleDataPersistence.h"
 #include "ElfUtils.h"
-#include "kernel/kernel_utils.h"
-#include "hooks_patcher_static.h"
 
 #include "utils/logger.h"
 #include "utils/dynamic.h"
@@ -46,11 +44,23 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
         std::string rplName = curReloc.getImportRPLInformation().getName();
         uint32_t functionAddress = 0;
 
-        if (replaceAllocFunctions) {
+        for (uint32_t i = 0; i < MAXIMUM_MODULES; i++) {
+            if (rplName.compare(gModuleData->module_data[i].module_export_name) == 0) {
+                export_data_t *exportEntries = gModuleData->module_data[i].export_entries;
+                for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
+                    if (functionName.compare(exportEntries[j].name) == 0) {
+                        functionAddress = (uint32_t) exportEntries[j].address;
+                    }
+                }
+            }
+        }
+
+        if ((functionAddress == 0) && replaceAllocFunctions) {
             if (functionName.compare("MEMAllocFromDefaultHeap") == 0) {
                 OSDynLoad_Module rplHandle;
                 OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
                 OSDynLoad_FindExport(rplHandle, 1, "MEMAllocFromMappedMemory", (void **) &functionAddress);
+
             } else if (functionName.compare("MEMAllocFromDefaultHeapEx") == 0) {
                 OSDynLoad_Module rplHandle;
                 OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
@@ -126,8 +136,6 @@ bool ResolveRelocations(const std::vector<ModuleData> &loadedModules, bool repla
 extern "C" void doStart(int argc, char **argv) {
     if (!gFunctionsPatched) {
         gFunctionsPatched = 1;
-        kernelInitialize();
-        PatchInvidualMethodHooks(method_hooks_hooks_static, method_hooks_size_hooks_static, method_calls_hooks_static);
     }
     DEBUG_FUNCTION_LINE("Loading module data\n");
     std::vector<ModuleData> loadedModulesUnordered = ModuleDataPersistence::loadModuleData(gModuleData);
@@ -149,27 +157,29 @@ extern "C" void doStart(int argc, char **argv) {
             }
         }
 
-        DEBUG_FUNCTION_LINE("Try to call memory mapping init\n");
+        DEBUG_FUNCTION_LINE("Try to call homebrew_functionpatcher init\n");
         // Call init hook of memory mapping
         for (auto &curModule : loadedModules) {
-            if (curModule.getExportName().compare("homebrew_memorymapping") == 0) {
+            if (curModule.getExportName().compare("homebrew_functionpatcher") == 0) {
                 CallHook(curModule, WUMS_HOOK_INIT);
                 break;
             }
         }
 
-        DEBUG_FUNCTION_LINE("Save mem mapping functions\n");
+        DEBUG_FUNCTION_LINE("Try to call dynloadpatch init\n");
+        // Call init hook of memory mapping
+        for (auto &curModule : loadedModules) {
+            if (curModule.getExportName().compare("homebrew_dynloadpatch") == 0) {
+                CallHook(curModule, WUMS_HOOK_INIT);
+                break;
+            }
+        }
+
+        DEBUG_FUNCTION_LINE("Try to call memory mapping init\n");
+        // Call init hook of memory mapping
         for (auto &curModule : loadedModules) {
             if (curModule.getExportName().compare("homebrew_memorymapping") == 0) {
-                for (auto &curExport : curModule.getExportDataList()) {
-                    if (curExport.getName().compare("MemoryMappingEffectiveToPhysical") == 0) {
-                        DEBUG_FUNCTION_LINE("Setting MemoryMappingEffectiveToPhysicalPTR to %08X\n", curExport.getAddress());
-                        MemoryMappingEffectiveToPhysicalPTR = (uint32_t) curExport.getAddress();
-                    } else if (curExport.getName().compare("MemoryMappingPhysicalToEffective") == 0) {
-                        DEBUG_FUNCTION_LINE("Setting MemoryMappingPhysicalToEffectivePTR to %08X\n", curExport.getAddress());
-                        MemoryMappingPhysicalToEffectivePTR = (uint32_t) curExport.getAddress();
-                    }
-                }
+                CallHook(curModule, WUMS_HOOK_INIT);
                 break;
             }
         }
@@ -185,7 +195,10 @@ extern "C" void doStart(int argc, char **argv) {
 
         for (auto &curModule : loadedModules) {
             if ((curModule.getExportName().compare("homebrew_memorymapping") != 0) &&
-                (curModule.getExportName().compare("homebrew_kernel") != 0)) {
+                (curModule.getExportName().compare("homebrew_functionpatcher") != 0) &&
+                (curModule.getExportName().compare("homebrew_dynloadpatch") != 0) &&
+                (curModule.getExportName().compare("homebrew_kernel") != 0)
+                ) {
                 CallHook(curModule, WUMS_HOOK_INIT);
             }
         }
@@ -239,6 +252,7 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
             }
             if (canLoad) {
                 weDidSomething = true;
+                DEBUG_FUNCTION_LINE("############## load %s\n", curModule.getExportName().c_str());
                 finalOrder.push_back(curModule);
                 loadedModulesExportNames.push_back(curModule.getExportName());
                 loadedModulesEntrypoints.push_back(curModule.getEntrypoint());
