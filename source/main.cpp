@@ -22,8 +22,6 @@
 #include "ElfUtils.h"
 #include "kernel.h"
 
-#include "common/module_defines.h"
-
 bool CheckRunning() {
 
     switch (ProcUIProcessMessages(true)) {

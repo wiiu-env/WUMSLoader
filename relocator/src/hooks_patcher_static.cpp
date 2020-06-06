@@ -1,6 +1,6 @@
 #include "utils/logger.h"
 #include "utils/function_patcher.h"
-#include "../../source/common/module_defines.h"
+#include <wums.h>
 #include "globals.h"
 #include <malloc.h>
 #include <coreinit/dynload.h>

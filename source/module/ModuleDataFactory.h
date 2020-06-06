@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "common/relocation_defines.h"
+#include <wums.h>
 #include "ModuleData.h"
 #include "elfio/elfio.hpp"
 

@@ -1,6 +1,5 @@
 #include "ModuleDataPersistence.h"
 #include "DynamicLinkingHelper.h"
-#include "../../source/common/module_defines.h"
 #include "../../source/module/ModuleData.h"
 #include "../../source/module/RelocationData.h"
 #include <coreinit/cache.h>

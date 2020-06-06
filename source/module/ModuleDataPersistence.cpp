@@ -2,7 +2,6 @@
 
 #include "ModuleDataPersistence.h"
 #include "DynamicLinkingHelper.h"
-#include "common/module_defines.h"
 #include "ModuleData.h"
 #include "RelocationData.h"
 

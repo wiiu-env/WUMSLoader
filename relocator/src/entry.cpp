@@ -8,13 +8,10 @@
 #include <coreinit/memorymap.h>
 #include <map>
 #include <algorithm>
-#include "../../source/common/dynamic_linking_defines.h"
-#include "../../source/common/module_defines.h"
 #include "../../source/module/RelocationData.h"
 #include "../../source/module/ModuleData.h"
 #include "ModuleDataPersistence.h"
 #include "ElfUtils.h"
-#include "../../source/common/relocation_defines.h"
 #include "kernel/kernel_utils.h"
 #include "hooks_patcher_static.h"
 

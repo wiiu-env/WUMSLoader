@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../source/common/dynamic_linking_defines.h"
+#include <wums.h>
 #include "utils/logger.h"
 #include <string>
 #include <vector>

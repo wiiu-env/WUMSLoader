@@ -4,7 +4,6 @@
 #include <vector>
 #include <coreinit/dynload.h>
 #include "utils/logger.h"
-#include "common/module_defines.h"
 
 dyn_linking_function_t *DynamicLinkingHelper::getOrAddFunctionEntryByName(dyn_linking_relocation_data_t *data, const char *functionName) {
     if (data == NULL) {

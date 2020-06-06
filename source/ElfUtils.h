@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "common/relocation_defines.h"
+#include <wums.h>
 
 #ifdef __cplusplus
 extern "C" {
