@@ -184,7 +184,12 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t* de
                     if (key.compare("export_name") == 0) {
                         DEBUG_FUNCTION_LINE("export_name = %s", value.c_str());
                         moduleData.setExportName(value);
-                    }else if (key.compare("wums") == 0) {
+                    }else if (key.compare("initBeforeEntrypoint") == 0) {
+                        if (value.compare("true") == 0) {
+                            DEBUG_FUNCTION_LINE("initBeforeEntrypoint = %s", value.c_str());
+                            moduleData.setInitBeforeEntrypoint(true);
+                        }
+                    }if (key.compare("wums") == 0) {
                         if (value.compare("0.1") != 0) {
                             DEBUG_FUNCTION_LINE("Warning: Ignoring module - Unsupported WUMS version: %s.\n", value.c_str());
                             return std::nullopt;

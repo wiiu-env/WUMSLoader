@@ -31,7 +31,7 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
         moduleData.setEntrypoint(module_data->entrypoint);
         moduleData.setStartAddress(module_data->startAddress);
         moduleData.setEndAddress(module_data->endAddress);
-
+        moduleData.setInitBeforeEntrypoint(module_data->initBeforeEntrypoint);
 
         moduleData.setExportName(module_data->module_export_name);
 

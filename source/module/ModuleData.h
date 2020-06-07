@@ -70,6 +70,7 @@ public:
     const std::vector<ExportData> &getExportDataList() const {
         return export_data_list;
     }
+
     void addHookData(const HookData &data) {
         hook_data_list.push_back(data);
     }
@@ -131,6 +132,14 @@ public:
         return this->export_name;
     }
 
+    bool isInitBeforeEntrypoint() const {
+        return this->initBeforeEntrypoint;
+    }
+
+    void setInitBeforeEntrypoint(bool value) {
+        this->initBeforeEntrypoint = value;
+    }
+
 private:
     std::vector<RelocationData> relocation_data_list;
     std::vector<ExportData> export_data_list;
@@ -146,4 +155,5 @@ private:
     uint32_t startAddress = 0;
     uint32_t endAddress = 0;
     uint32_t entrypoint = 0;
+    bool initBeforeEntrypoint = false;
 };

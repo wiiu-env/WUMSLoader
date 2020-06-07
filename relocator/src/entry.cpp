@@ -151,36 +151,8 @@ extern "C" void doStart(int argc, char **argv) {
         DEBUG_FUNCTION_LINE("Try to call kernel init\n");
         // Call init hook of kernel
         for (auto &curModule : loadedModules) {
-            if (curModule.getExportName().compare("homebrew_kernel") == 0) {
+            if (curModule.isInitBeforeEntrypoint()) {
                 CallHook(curModule, WUMS_HOOK_INIT);
-                break;
-            }
-        }
-
-        DEBUG_FUNCTION_LINE("Try to call homebrew_functionpatcher init\n");
-        // Call init hook of memory mapping
-        for (auto &curModule : loadedModules) {
-            if (curModule.getExportName().compare("homebrew_functionpatcher") == 0) {
-                CallHook(curModule, WUMS_HOOK_INIT);
-                break;
-            }
-        }
-
-        DEBUG_FUNCTION_LINE("Try to call dynloadpatch init\n");
-        // Call init hook of memory mapping
-        for (auto &curModule : loadedModules) {
-            if (curModule.getExportName().compare("homebrew_dynloadpatch") == 0) {
-                CallHook(curModule, WUMS_HOOK_INIT);
-                break;
-            }
-        }
-
-        DEBUG_FUNCTION_LINE("Try to call memory mapping init\n");
-        // Call init hook of memory mapping
-        for (auto &curModule : loadedModules) {
-            if (curModule.getExportName().compare("homebrew_memorymapping") == 0) {
-                CallHook(curModule, WUMS_HOOK_INIT);
-                break;
             }
         }
 
@@ -194,11 +166,7 @@ extern "C" void doStart(int argc, char **argv) {
         }
 
         for (auto &curModule : loadedModules) {
-            if ((curModule.getExportName().compare("homebrew_memorymapping") != 0) &&
-                (curModule.getExportName().compare("homebrew_functionpatcher") != 0) &&
-                (curModule.getExportName().compare("homebrew_dynloadpatch") != 0) &&
-                (curModule.getExportName().compare("homebrew_kernel") != 0)
-                ) {
+            if (!curModule.isInitBeforeEntrypoint()) {
                 CallHook(curModule, WUMS_HOOK_INIT);
             }
         }
