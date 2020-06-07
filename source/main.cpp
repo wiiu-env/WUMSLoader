@@ -112,6 +112,7 @@ int main(int argc, char **argv) {
     }
 
     memset((void *) gModuleData, 0, sizeof(module_information_t));
+    gModuleData->version = MODULE_INFORMATION_VERSION;
 
     DirList modules("fs:/vol/external01/wiiu/modules", ".wms", DirList::Files, 1);
     modules.SortList();
