@@ -191,11 +191,11 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
         bool weDidSomething = false;
         for (auto const &curModule : loadedModules) {
             if (std::find(loadedModulesEntrypoints.begin(), loadedModulesEntrypoints.end(), curModule.getEntrypoint()) != loadedModulesEntrypoints.end()) {
-                DEBUG_FUNCTION_LINE("%s [%08X] is already loaded\n", curModule.getExportName().c_str(), curModule.getEntrypoint());
+                // DEBUG_FUNCTION_LINE("%s [%08X] is already loaded\n", curModule.getExportName().c_str(), curModule.getEntrypoint());
                 continue;
             }
             canBreak = false;
-            DEBUG_FUNCTION_LINE("Missing %s\n", curModule.getExportName().c_str());
+            DEBUG_FUNCTION_LINE("Check if we can load %s\n", curModule.getExportName().c_str());
             std::vector<std::string> importsFromOtherModules;
             for (auto curReloc: curModule.getRelocationDataList()) {
                 std::string curRPL = curReloc.getImportRPLInformation().getName();
@@ -220,7 +220,7 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
             }
             if (canLoad) {
                 weDidSomething = true;
-                DEBUG_FUNCTION_LINE("############## load %s\n", curModule.getExportName().c_str());
+                DEBUG_FUNCTION_LINE("We can load: %s\n", curModule.getExportName().c_str());
                 finalOrder.push_back(curModule);
                 loadedModulesExportNames.push_back(curModule.getExportName());
                 loadedModulesEntrypoints.push_back(curModule.getEntrypoint());
