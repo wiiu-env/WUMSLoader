@@ -144,7 +144,7 @@ class relocation_section_accessor_template
                Elf_Half&    section) const
     {
         // Do regular job
-        Elf_Word symbol;
+        Elf_Word symbol = 0;
         bool ret = get_entry( index, offset, symbol, type, addend );
 
         // Find the symbol

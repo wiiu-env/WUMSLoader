@@ -249,7 +249,7 @@ std::vector<RelocationData> ModuleDataFactory::getImportRelocationData(elfio &re
                     break;
                 }
 
-                uint32_t adjusted_sym_value = (uint32_t) sym_value;
+                // uint32_t adjusted_sym_value = (uint32_t) sym_value;
                 if(infoMap.count(sym_section_index) == 0){
                     continue;
                 }
