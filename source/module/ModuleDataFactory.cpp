@@ -30,7 +30,7 @@
 
 using namespace ELFIO;
 
-std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t* destination_address_ptr, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
+std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *destination_address_ptr, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
     elfio reader;
     ModuleData moduleData;
 
@@ -141,8 +141,8 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t* de
         wums_entry_t *entries = (wums_entry_t *) secInfo->getAddress();
         if (entries != NULL) {
             for (size_t j = 0; j < entries_count; j++) {
-                wums_entry_t * exp = &entries[j];
-                DEBUG_FUNCTION_LINE("Saving export of type %08X, name %s, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, exp->type, exp->name, (void *)  exp->address);
+                wums_entry_t *exp = &entries[j];
+                DEBUG_FUNCTION_LINE("Saving export of type %08X, name %s, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, exp->type, exp->name, (void *) exp->address);
                 ExportData export_data(exp->type, exp->name, exp->address);
                 moduleData.addExportData(export_data);
             }
@@ -155,7 +155,7 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t* de
         wums_hook_t *hooks = (wums_hook_t *) secInfo->getAddress();
         if (hooks != NULL) {
             for (size_t j = 0; j < entries_count; j++) {
-                wums_hook_t * hook = &hooks[j];
+                wums_hook_t *hook = &hooks[j];
                 DEBUG_FUNCTION_LINE("Saving hook of type %08X, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, hook->type, hook->target);
                 HookData hook_data(hook->type, hook->target);
                 moduleData.addHookData(hook_data);
@@ -184,12 +184,13 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t* de
                     if (key.compare("export_name") == 0) {
                         DEBUG_FUNCTION_LINE("export_name = %s", value.c_str());
                         moduleData.setExportName(value);
-                    }else if (key.compare("initBeforeEntrypoint") == 0) {
+                    } else if (key.compare("initBeforeEntrypoint") == 0) {
                         if (value.compare("true") == 0) {
                             DEBUG_FUNCTION_LINE("initBeforeEntrypoint = %s", value.c_str());
                             moduleData.setInitBeforeEntrypoint(true);
                         }
-                    }if (key.compare("wums") == 0) {
+                    }
+                    if (key.compare("wums") == 0) {
                         if (value.compare("0.1") != 0) {
                             DEBUG_FUNCTION_LINE("Warning: Ignoring module - Unsupported WUMS version: %s.\n", value.c_str());
                             return std::nullopt;
@@ -201,8 +202,8 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t* de
         }
     }
 
-    DCFlushRange((void*)*destination_address_ptr, totalSize);
-    ICInvalidateRange((void*)*destination_address_ptr, totalSize);
+    DCFlushRange((void *) *destination_address_ptr, totalSize);
+    ICInvalidateRange((void *) *destination_address_ptr, totalSize);
 
     free(destinations);
 
@@ -250,7 +251,7 @@ std::vector<RelocationData> ModuleDataFactory::getImportRelocationData(elfio &re
                 }
 
                 // uint32_t adjusted_sym_value = (uint32_t) sym_value;
-                if(infoMap.count(sym_section_index) == 0){
+                if (infoMap.count(sym_section_index) == 0) {
                     continue;
                 }
                 std::optional<ImportRPLInformation> rplInfo = ImportRPLInformation::createImportRPLInformation(infoMap[sym_section_index]);
