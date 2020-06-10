@@ -130,6 +130,7 @@ extern "C" void doStart(int argc, char **argv) {
             }
         }
 
+        CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
 
         for (int i = 0; i < gModuleData->number_used_modules; i++) {
             DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
@@ -145,6 +146,7 @@ extern "C" void doStart(int argc, char **argv) {
     } else {
         DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions\n");
         ResolveRelocations(loadedModules);
+        CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
     }
 
     // CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
