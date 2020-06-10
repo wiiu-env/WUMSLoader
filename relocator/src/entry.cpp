@@ -37,7 +37,7 @@ extern "C" int _start(int argc, char **argv) {
     return ((int (*)(int, char **)) (*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
-bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length, bool replaceAllocFunctions) {
+bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length) {
     std::map<std::string, OSDynLoad_Module> moduleCache;
     for (auto const &curReloc : relocData) {
         std::string functionName = curReloc.getName();
@@ -55,25 +55,6 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
             }
         }
 
-        if ((functionAddress == 0) && replaceAllocFunctions) {
-            if (functionName.compare("MEMAllocFromDefaultHeap") == 0) {
-                OSDynLoad_Module rplHandle;
-                OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
-                OSDynLoad_FindExport(rplHandle, 1, "MEMAllocFromMappedMemory", (void **) &functionAddress);
-
-            } else if (functionName.compare("MEMAllocFromDefaultHeapEx") == 0) {
-                OSDynLoad_Module rplHandle;
-                OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
-                OSDynLoad_FindExport(rplHandle, 1, "MEMAllocFromMappedMemoryEx", (void **) &functionAddress);
-            } else if (functionName.compare("MEMFreeToDefaultHeap") == 0) {
-                OSDynLoad_Module rplHandle;
-                OSDynLoad_Acquire("homebrew_memorymapping", &rplHandle);
-                OSDynLoad_FindExport(rplHandle, 1, "MEMFreeToMappedMemory", (void **) &functionAddress);
-            }
-            if (functionAddress != 0) {
-                // DEBUG_FUNCTION_LINE("Using memorymapping function %08X %08X\n", functionAddress, *((uint32_t*)functionAddress));
-            }
-        }
         if (functionAddress == 0) {
             int32_t isData = curReloc.getImportRPLInformation().isData();
             OSDynLoad_Module rplHandle = 0;
@@ -100,21 +81,14 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
     return true;
 }
 
-bool ResolveRelocations(const std::vector<ModuleData> &loadedModules, bool replaceAllocFunctions) {
+bool ResolveRelocations(const std::vector<ModuleData> &loadedModules) {
     bool wasSuccessful = true;
 
     for (auto const &curModule : loadedModules) {
         DEBUG_FUNCTION_LINE("Let's do the relocations for %s\n", curModule.getExportName().c_str());
         if (wasSuccessful) {
             std::vector<RelocationData> relocData = curModule.getRelocationDataList();
-            bool replaceAlloc = replaceAllocFunctions;
-            if (replaceAlloc) {
-                if (curModule.getExportName().compare("homebrew_memorymapping") == 0) {
-                    DEBUG_FUNCTION_LINE("Skip malloc replacement for mapping\n");
-                    replaceAlloc = false;
-                }
-            }
-            if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH, replaceAlloc)) {
+            if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH)) {
                 DEBUG_FUNCTION_LINE("FAIL\n");
                 wasSuccessful = false;
             }
@@ -146,7 +120,7 @@ extern "C" void doStart(int argc, char **argv) {
         gInitCalled = 1;
 
         DEBUG_FUNCTION_LINE("Resolve relocations without replacing alloc functions\n");
-        ResolveRelocations(loadedModules, false);
+        ResolveRelocations(loadedModules);
 
         DEBUG_FUNCTION_LINE("Try to call kernel init\n");
         // Call init hook of kernel
@@ -156,8 +130,6 @@ extern "C" void doStart(int argc, char **argv) {
             }
         }
 
-        DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions\n");
-        ResolveRelocations(loadedModules, true);
 
         for (int i = 0; i < gModuleData->number_used_modules; i++) {
             DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
@@ -172,7 +144,7 @@ extern "C" void doStart(int argc, char **argv) {
         }
     } else {
         DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions\n");
-        ResolveRelocations(loadedModules, true);
+        ResolveRelocations(loadedModules);
     }
 
     // CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
