@@ -37,6 +37,8 @@ public:
             sectionSize(o2.sectionSize) {
     }
 
+    SectionInfo& operator=(const SectionInfo& other) = default;
+
 
     virtual ~SectionInfo() {
 
