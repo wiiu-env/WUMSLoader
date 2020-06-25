@@ -1,5 +1,5 @@
 #include "kernel.h"
-#include "relocator.h"
+#include "relocator_elf.h"
 #include "ElfUtils.h"
 #include <coreinit/cache.h>
 #include <coreinit/memorymap.h>
@@ -14,7 +14,7 @@ void SetupRelocator() {
     kern_write((void *) (KERN_SYSCALL_TBL_4 + (0x25 * 4)), (unsigned int) SCKernelCopyData);
     kern_write((void *) (KERN_SYSCALL_TBL_5 + (0x25 * 4)), (unsigned int) SCKernelCopyData);
 
-    uint32_t entryPoint = load_loader_elf(0, (char *) ___relocator_relocator_elf, ___relocator_relocator_elf_len);
+    uint32_t entryPoint = load_loader_elf(0, (char *) relocator_elf, relocator_elf_size);
 
     unsigned int repl_addr = ADDRESS_main_entry_hook;
     KernelWriteU32(repl_addr, 0x48000003 | entryPoint);

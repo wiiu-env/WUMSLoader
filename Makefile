@@ -86,7 +86,7 @@ endif
 
 export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES))
 export OFILES_SRC	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
-export OFILES 	:=	$(OFILES_BIN) $(OFILES_SRC)
+export OFILES 	:=	$(OFILES_BIN) $(OFILES_SRC) relocator.elf.o
 export HFILES_BIN	:=	$(addsuffix .h,$(subst .,_,$(BINFILES)))
 
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
@@ -108,7 +108,6 @@ $(BUILD):
 #-------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -rf source/relocator.h
 	make clean -C relocator
 	@rm -fr $(BUILD) $(TARGET).rpx $(TARGET).elf
 
@@ -129,10 +128,9 @@ all	:	 $(OUTPUT).rpx
 $(relocator_elf): 
 	make -C ../relocator
 
-
 $(OUTPUT).rpx	:	$(OUTPUT).elf
 $(OUTPUT).elf	:   $(OFILES)
-$(OFILES)       :   relocator.h
+$(OFILES)       :   relocator_elf.h
 
 $(OFILES_SRC)	: $(HFILES_BIN)
 
@@ -149,8 +147,8 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 	@echo $(notdir $<)
 	@$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d -x assembler-with-cpp $(ASFLAGS) -c $< -o $@ $(ERROR_FILTER)
     
-relocator.h: $(relocator_elf)
-	xxd -i $< | sed "s/unsigned/static const unsigned/g;s/loader/loader/g;s/build_//g" > ../source/$@
+relocator_elf.h: $(relocator_elf)
+	bin2s -a 32 -H `(echo $(<F) | tr . _)`.h $< | $(AS) -o $(<F).o
 
 -include $(DEPENDS)
 
