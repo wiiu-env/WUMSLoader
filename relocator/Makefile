@@ -42,10 +42,8 @@ INCLUDES	:=  src
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-CFLAGS	:=  -std=gnu11 -mcpu=750 -meabi -mhard-float -ffast-math \
-		    -O2 -Wall -Wextra -Wno-unused-parameter -Wno-strict-aliasing $(INCLUDE)
-CXXFLAGS := -std=gnu++11 -mcpu=750 -meabi -mhard-float -ffast-math \
-		    -O2 -Wall -Wextra -Wno-unused-parameter -Wno-strict-aliasing  -std=c++17  $(INCLUDE)
+CFLAGS	:=  -g -Wall -O2 -ffunction-sections $(MACHDEP) $(INCLUDE) -D__WIIU__ -D__WUT__
+CXXFLAGS := $(CFLAGS) -std=c++17
 ASFLAGS	:= -mregnames
 LDFLAGS	:= -nostartfiles -Wl,--gc-sections
 
