@@ -102,8 +102,8 @@ bool ResolveRelocations(const std::vector<ModuleData> &loadedModules) {
             // memset((void *) curModule.getSBSSAddr(), 0, curModule.getSBSSSize());
         }
     }
-    DCFlushRange((void *) 0x00800000, 0x00800000);
-    ICInvalidateRange((void *) 0x00800000, 0x00800000);
+    DCFlushRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
+    ICInvalidateRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
     return wasSuccessful;
 }
 
