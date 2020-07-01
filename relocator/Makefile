@@ -170,6 +170,11 @@ $(OUTPUT).elf:  $(OFILES)
 	@$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d -x assembler-with-cpp $(ASFLAGS) -c $< -o $@ $(ERROR_FILTER)
 
 #---------------------------------------------------------------------------------
+%.o: %.S
+	@echo $(notdir $<)
+	@$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d -x assembler-with-cpp $(ASFLAGS) -c $< -o $@ $(ERROR_FILTER)
+
+#---------------------------------------------------------------------------------
 %.png.o : %.png
 	@echo $(notdir $<)
 	@bin2s -a 32 $< | $(AS) -o $(@)
