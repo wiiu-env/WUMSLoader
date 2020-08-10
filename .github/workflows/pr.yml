@@ -1,0 +1,15 @@
+name: CI
+
+on: [pull_request]
+    
+jobs:
+  build-binary:
+    needs: build-docker
+    runs-on: ubuntu-18.04
+    container: wiiuenvbuilder/setuppayload-builder:latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: build binary
+      run: make
