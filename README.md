@@ -31,7 +31,6 @@ docker run -it --rm -v ${PWD}:/project setuppayload-builder make
 docker run -it --rm -v ${PWD}:/project setuppayload-builder make clean
 ```
 
-
 ## Credits
 - maschell
 - Copy paste stuff from dimok
