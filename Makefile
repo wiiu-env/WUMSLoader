@@ -21,7 +21,7 @@ WUMS_ROOT := $(DEVKITPRO)/wums
 TARGET		:=	payload
 BUILD		:=	build
 SOURCES		:=	source \
-                source/libelf\
+                source/elfio\
                 source/utils\
                 source/fs \
                 source/module
@@ -41,7 +41,7 @@ CXXFLAGS	:= $(CFLAGS) -std=c++17
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lwut
+LIBS	:= -lwut -lz
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level
