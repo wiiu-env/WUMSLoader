@@ -1,4 +1,4 @@
-name: CI
+name: CI-Release
 
 on:
   push:
@@ -6,43 +6,31 @@ on:
       - master
     
 jobs:
-  build-docker:
-   runs-on: ubuntu-latest
-   steps:
-   - uses: actions/checkout@master
-   - name: Publish to Registry
-     uses: elgohr/Publish-Docker-Github-Action@master
-     with:
-       name: wiiuenv/setuppayload-builder       
-       username: ${{ secrets.DOCKER_USERNAME }}
-       password: ${{ secrets.DOCKER_PASSWORD }}
-       cache: true
-       tags: "latest"
   build-binary:
-    needs: build-docker
     runs-on: ubuntu-18.04
-    container: wiiuenvbuilder/setuppayload-builder:latest
     steps:
     - uses: actions/checkout@v2
     - name: build binary
-      run: make
+      run: |
+        docker build . -t builder
+        docker run --rm -v ${PWD}:/project builder make
     - uses: actions/upload-artifact@master
       with:
-       name: artifact
+       name: binary
        path: "*.rpx"
   deploy-binary:
     needs: build-binary
     runs-on: ubuntu-18.04
-    steps:
-    - uses: actions/download-artifact@master
-      with:
-        name: artifact
-        path: wiiu
+    steps:   
     - name: Get environment variables
       id: get_repository_name
       run: |
         echo ::set-env name=REPOSITORY_NAME::$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")
         echo ::set-env name=DATETIME::$(echo $(date '+%Y%m%d-%H%M%S'))   
+    - uses: actions/download-artifact@master
+      with:
+        name: binary
+        path: wiiu
     - name: zip artifact
       run: zip -r ${{ env.REPOSITORY_NAME }}_${{ env.DATETIME }}.zip wiiu
     - name: Create Release
