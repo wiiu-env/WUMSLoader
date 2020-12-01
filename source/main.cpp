@@ -111,8 +111,7 @@ int main(int argc, char **argv) {
     uint32_t destination_address = ((uint32_t) gModuleData + (sizeof(module_information_t) + 0x0000FFFF)) & 0xFFFF0000;
     for (int i = 0; i < modules.GetFilecount(); i++) {
         DEBUG_FUNCTION_LINE("Loading module %s", modules.GetFilepath(i));
-
-        std::optional<ModuleData> moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, MEMORY_REGION_USABLE_END - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        std::optional<ModuleData> moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, MEMORY_REGION_USABLE_END - destination_address, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
 
         if (moduleData) {
             DEBUG_FUNCTION_LINE("Successfully loaded %s", modules.GetFilepath(i));

@@ -54,7 +54,6 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
     uint32_t totalSize = 0;
     uint32_t endAddress = 0;
 
-
     for (uint32_t i = 0; i < sec_num; ++i) {
         section *psec = reader.sections[i];
         if (psec->get_type() == 0x80000002) {
@@ -63,6 +62,13 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
 
         if ((psec->get_type() == SHT_PROGBITS || psec->get_type() == SHT_NOBITS) && (psec->get_flags() & SHF_ALLOC)) {
             uint32_t sectionSize = psec->get_size();
+
+            totalSize += sectionSize;
+            if(totalSize > maximum_size){
+                DEBUG_FUNCTION_LINE("Couldn't load setup module because it's too big.");
+                return {};
+            }
+
             uint32_t address = (uint32_t) psec->get_address();
 
             destinations[psec->get_index()] = (uint8_t *) baseOffset;
@@ -107,7 +113,6 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
             moduleData.addSectionInfo(SectionInfo(psec->get_name(), destination, sectionSize));
             DEBUG_FUNCTION_LINE("Saved %s section info. Location: %08X size: %08X", psec->get_name().c_str(), destination, sectionSize);
 
-            totalSize += sectionSize;
 
             if (endAddress < destination + sectionSize) {
                 endAddress = destination + sectionSize;
