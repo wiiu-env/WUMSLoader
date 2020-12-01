@@ -39,6 +39,7 @@ bool CheckRunning() {
 
 extern "C" uint32_t textStart();
 
+extern "C" void _SYSLaunchMenuWithCheckingAccount(nn::act::SlotNo slot);
 bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length) {
     for (auto const &curReloc : relocData) {
         std::string functionName = curReloc.getName();
@@ -126,7 +127,17 @@ int main(int argc, char **argv) {
     WHBLogUdpDeinit();
 
     ProcUIInit(OSSavesDone_ReadyToRelease);
-    SYSLaunchMenu();
+
+    nn::act::Initialize();
+    nn::act::SlotNo slot = nn::act::GetSlotNo();
+    nn::act::SlotNo defaultSlot = nn::act::GetDefaultAccount();
+    nn::act::Finalize();
+
+    if (defaultSlot) { //normal menu boot
+        SYSLaunchMenu();
+    } else { //show mii select
+        _SYSLaunchMenuWithCheckingAccount(slot);
+    }
     while (CheckRunning()) {
         // wait.
         OSSleepTicks(OSMillisecondsToTicks(100));
