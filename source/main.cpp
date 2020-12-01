@@ -1,21 +1,16 @@
-#include <stdio.h>
-#include <string.h>
+#include <cstring>
 
 #include <elfio/elfio.hpp>
 #include <proc_ui/procui.h>
 #include <sysapp/launch.h>
 #include <coreinit/foreground.h>
 #include <coreinit/cache.h>
-#include <coreinit/cache.h>
-#include <coreinit/memorymap.h>
+#include <nn/act/client_cpp.h>
 #include <coreinit/dynload.h>
-#include <whb/log.h>
 #include <whb/log_udp.h>
 #include <vector>
 
 #include "fs/DirList.h"
-#include "utils/logger.h"
-#include "utils/utils.h"
 #include "module/ModuleDataPersistence.h"
 #include "module/ModuleDataFactory.h"
 #include "ElfUtils.h"
@@ -49,7 +44,7 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
         std::string functionName = curReloc.getName();
         std::string rplName = curReloc.getImportRPLInformation().getName();
         int32_t isData = curReloc.getImportRPLInformation().isData();
-        OSDynLoad_Module rplHandle = 0;
+        OSDynLoad_Module rplHandle = nullptr;
         OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
 
         uint32_t functionAddress = 0;
@@ -79,10 +74,10 @@ int main(int argc, char **argv) {
     setupModules.SortList();
 
     for (int i = 0; i < setupModules.GetFilecount(); i++) {
+        uint32_t destination_address = ((uint32_t) gModuleData + (sizeof(module_information_t) + 0x0000FFFF)) & 0xFFFF0000;
         memset((void *) gModuleData, 0, sizeof(module_information_t));
         DEBUG_FUNCTION_LINE("Trying to run %s", setupModules.GetFilepath(i));
-            uint32_t destination_address = ((uint32_t) gModuleData + (sizeof(module_information_t) + 0x0000FFFF)) & 0xFFFF0000;
-        std::optional<ModuleData> moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), &destination_address, MEMORY_REGION_USABLE_END - textSectionStart, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        std::optional<ModuleData> moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), &destination_address, textSectionStart - destination_address, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
         if (!moduleData) {
             DEBUG_FUNCTION_LINE("Failed to load %s", setupModules.GetFilepath(i));
             continue;

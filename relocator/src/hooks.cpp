@@ -1,6 +1,5 @@
 #include <wums.h>
 #include "hooks.h"
-#include "utils/logger.h"
 #include "globals.h"
 
 static const char **hook_names = (const char *[]) {
@@ -21,7 +20,7 @@ void CallHook(const std::vector<ModuleData> &modules, wums_hook_type_t type) {
 
 void CallHook(const ModuleData &module, wums_hook_type_t type) {
     for (auto &curHook : module.getHookDataList()) {
-        uint32_t func_ptr = (uint32_t) curHook.getTarget();
+        auto func_ptr = (uint32_t) curHook.getTarget();
         if (func_ptr == 0) {
             DEBUG_FUNCTION_LINE("Hook ptr was NULL\n");
             break;
@@ -33,7 +32,7 @@ void CallHook(const ModuleData &module, wums_hook_type_t type) {
                  type == WUMS_HOOK_INIT_WUT ||
                  type == WUMS_HOOK_FINI_WUT)) {
                 DEBUG_FUNCTION_LINE("Calling hook of type %s [%d] %d for %s \n", hook_names[type], type, curHook.getType(), module.getExportName().c_str());
-                ((void (*)(void)) ((uint32_t *) func_ptr))();
+                ((void (*)()) ((uint32_t *) func_ptr))();
                 break;
             } else if (type == WUMS_HOOK_INIT ||
                        type == WUMS_HOOK_RELOCATIONS_DONE) {

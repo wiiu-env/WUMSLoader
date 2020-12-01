@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <string.h>
 #include <coreinit/cache.h>
 
 #include "utils/logger.h"

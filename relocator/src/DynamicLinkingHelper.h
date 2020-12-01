@@ -49,7 +49,7 @@ public:
 
     static bool addReloationEntry(dyn_linking_relocation_data_t *linking_data, dyn_linking_relocation_entry_t *linking_entries, uint32_t linking_entry_length, const RelocationData &relocationData);
 
-    static bool addReloationEntry(dyn_linking_relocation_data_t *linking_data, dyn_linking_relocation_entry_t *linking_entries, uint32_t linking_entry_length, char type, size_t offset, int32_t addend, void *destination, std::string name,
+    static bool addReloationEntry(dyn_linking_relocation_data_t *linking_data, dyn_linking_relocation_entry_t *linking_entries, uint32_t linking_entry_length, char type, size_t offset, int32_t addend, void *destination, const std::string& name,
                                   const ImportRPLInformation &rplInfo);
 
     static bool
