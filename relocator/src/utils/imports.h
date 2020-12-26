@@ -3,6 +3,7 @@ IMPORT_BEGIN(coreinit);
 
 IMPORT(OSDynLoad_Acquire);
 IMPORT(OSDynLoad_FindExport);
+IMPORT(OSDynLoad_IsModuleLoaded);
 IMPORT(DCFlushRange);
 IMPORT(ICInvalidateRange);
 IMPORT(OSGetSystemInfo);
