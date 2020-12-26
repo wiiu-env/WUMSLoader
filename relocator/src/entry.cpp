@@ -59,7 +59,10 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
             int32_t isData = curReloc.getImportRPLInformation().isData();
             OSDynLoad_Module rplHandle = 0;
             if (moduleCache.count(rplName) == 0) {
-                OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+                if(OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle) != OS_DYNLOAD_OK) {
+                    // only acquire if not already loaded.
+                    OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+                }
                 moduleCache[rplName] = rplHandle;
             }
             rplHandle = moduleCache.at(rplName);

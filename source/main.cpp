@@ -46,7 +46,11 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
         std::string rplName = curReloc.getImportRPLInformation().getName();
         int32_t isData = curReloc.getImportRPLInformation().isData();
         OSDynLoad_Module rplHandle = nullptr;
-        OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+
+        if(OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle) != OS_DYNLOAD_OK) {
+            // only acquire if not already loaded.
+            OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+        }
 
         uint32_t functionAddress = 0;
         OSDynLoad_FindExport(rplHandle, isData, functionName.c_str(), (void **) &functionAddress);
