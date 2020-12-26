@@ -1,19 +1,16 @@
 #include <vector>
 #include <string>
-#include <string.h>
-#include <stdint.h>
+#include <cstring>
+#include <cstdint>
 #include <coreinit/dynload.h>
 #include <coreinit/cache.h>
 #include <nsysnet/socket.h>
-#include <coreinit/memorymap.h>
 #include <map>
 #include <algorithm>
 #include "../../source/module/RelocationData.h"
 #include "../../source/module/ModuleData.h"
 #include "ModuleDataPersistence.h"
 #include "ElfUtils.h"
-
-#include "utils/logger.h"
 #include "utils/dynamic.h"
 #include "globals.h"
 #include "hooks.h"
@@ -125,24 +122,25 @@ extern "C" void doStart(int argc, char **argv) {
         DEBUG_FUNCTION_LINE("Resolve relocations without replacing alloc functions\n");
         ResolveRelocations(loadedModules);
 
-        DEBUG_FUNCTION_LINE("Try to call kernel init\n");
-        // Call init hook of kernel
         for (auto &curModule : loadedModules) {
-            if (curModule.isInitBeforeEntrypoint()) {
+            if (curModule.isInitBeforeRelocationDoneHook()) {
                 CallHook(curModule, WUMS_HOOK_INIT);
             }
         }
 
+        DEBUG_FUNCTION_LINE("Relocations done\n");
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
 
         for (int i = 0; i < gModuleData->number_used_modules; i++) {
-            DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
-            int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
-            DEBUG_FUNCTION_LINE("return code was %d\n", ret);
+            if (!gModuleData->module_data[i].skipEntrypoint) {
+                DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
+                int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
+                DEBUG_FUNCTION_LINE("return code was %d\n", ret);
+            }
         }
 
         for (auto &curModule : loadedModules) {
-            if (!curModule.isInitBeforeEntrypoint()) {
+            if (!curModule.isInitBeforeRelocationDoneHook()) {
                 CallHook(curModule, WUMS_HOOK_INIT);
             }
         }
@@ -152,6 +150,7 @@ extern "C" void doStart(int argc, char **argv) {
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
     }
 
+    // TODO: Implement Application ends hook
     // CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
     // CallHook(loadedModules, WUMS_HOOK_INIT_WUT);
 

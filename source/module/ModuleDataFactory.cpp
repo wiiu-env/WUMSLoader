@@ -189,10 +189,15 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
                     if (key.compare("export_name") == 0) {
                         DEBUG_FUNCTION_LINE("export_name = %s", value.c_str());
                         moduleData.setExportName(value);
-                    } else if (key.compare("initBeforeEntrypoint") == 0) {
+                    } else if (key.compare("skipEntrypoint") == 0) {
                         if (value.compare("true") == 0) {
-                            DEBUG_FUNCTION_LINE("initBeforeEntrypoint = %s", value.c_str());
-                            moduleData.setInitBeforeEntrypoint(true);
+                            DEBUG_FUNCTION_LINE("skipEntrypoint = %s", value.c_str());
+                            moduleData.setSkipEntrypoint(true);
+                        }
+                    } else if (key.compare("initBeforeRelocationDoneHook") == 0) {
+                        if (value.compare("true") == 0) {
+                            DEBUG_FUNCTION_LINE("initBeforeRelocationDoneHook = %s", value.c_str());
+                            moduleData.setInitBeforeRelocationDoneHook(true);
                         }
                     }
                     if (key.compare("wums") == 0) {
