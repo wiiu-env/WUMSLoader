@@ -115,6 +115,27 @@ extern "C" void doStart(int argc, char **argv) {
     std::vector<ModuleData> loadedModulesUnordered = ModuleDataPersistence::loadModuleData(gModuleData);
     std::vector<ModuleData> loadedModules = OrderModulesByDependencies(loadedModulesUnordered);
 
+
+    bool applicationEndHookLoaded = false;
+    for (auto &curModule : loadedModules) {
+        if (curModule.getExportName() == "homebrew_applicationendshook") {
+            DEBUG_FUNCTION_LINE("We have ApplicationEndsHook Module!\n");
+            applicationEndHookLoaded = true;
+            break;
+        }
+    }
+
+    // Make sure WUMS_HOOK_APPLICATION_ENDS and WUMS_HOOK_FINI_WUT are called
+    for (auto &curModule : loadedModules) {
+        for (auto &curHook : curModule.getHookDataList()) {
+            if (curHook.getType() == WUMS_HOOK_APPLICATION_ENDS || curHook.getType() == WUMS_HOOK_FINI_WUT) {
+                if (!applicationEndHookLoaded) {
+                    OSFatal_printf("%s requires module homebrew_applicationendshook", curModule.getExportName().c_str());
+                }
+            }
+        }
+    }
+
     DEBUG_FUNCTION_LINE("Number of modules %d\n", gModuleData->number_used_modules);
     if (!gInitCalled) {
         gInitCalled = 1;
@@ -124,12 +145,15 @@ extern "C" void doStart(int argc, char **argv) {
 
         for (auto &curModule : loadedModules) {
             if (curModule.isInitBeforeRelocationDoneHook()) {
+                CallHook(loadedModules, WUMS_HOOK_INIT_WUT);
                 CallHook(curModule, WUMS_HOOK_INIT);
+                CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
             }
         }
 
         DEBUG_FUNCTION_LINE("Relocations done\n");
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
+
 
         for (int i = 0; i < gModuleData->number_used_modules; i++) {
             if (!gModuleData->module_data[i].skipEntrypoint) {
@@ -141,7 +165,9 @@ extern "C" void doStart(int argc, char **argv) {
 
         for (auto &curModule : loadedModules) {
             if (!curModule.isInitBeforeRelocationDoneHook()) {
+                CallHook(loadedModules, WUMS_HOOK_INIT_WUT);
                 CallHook(curModule, WUMS_HOOK_INIT);
+                CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
             }
         }
     } else {
@@ -149,12 +175,9 @@ extern "C" void doStart(int argc, char **argv) {
         ResolveRelocations(loadedModules);
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
     }
-
-    // TODO: Implement Application ends hook
-    // CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
-    // CallHook(loadedModules, WUMS_HOOK_INIT_WUT);
-
+    CallHook(loadedModules, WUMS_HOOK_INIT_WUT);
     CallHook(loadedModules, WUMS_HOOK_APPLICATION_STARTS);
+    //CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
 }
 
 std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData> &loadedModules) {
