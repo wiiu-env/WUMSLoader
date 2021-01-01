@@ -147,6 +147,7 @@ public:
         this->initBeforeRelocationDoneHook = value;
     }
 
+    bool relocationsDone = false;
 private:
     std::vector<RelocationData> relocation_data_list;
     std::vector<ExportData> export_data_list;

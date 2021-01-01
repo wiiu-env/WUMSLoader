@@ -42,10 +42,10 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
         uint32_t functionAddress = 0;
 
         for (uint32_t i = 0; i < MAXIMUM_MODULES; i++) {
-            if (rplName.compare(gModuleData->module_data[i].module_export_name) == 0) {
+            if (rplName == gModuleData->module_data[i].module_export_name) {
                 export_data_t *exportEntries = gModuleData->module_data[i].export_entries;
                 for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
-                    if (functionName.compare(exportEntries[j].name) == 0) {
+                    if (functionName == exportEntries[j].name) {
                         functionAddress = (uint32_t) exportEntries[j].address;
                     }
                 }
@@ -54,11 +54,17 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
 
         if (functionAddress == 0) {
             int32_t isData = curReloc.getImportRPLInformation().isData();
-            OSDynLoad_Module rplHandle = 0;
+            OSDynLoad_Module rplHandle = nullptr;
             if (moduleCache.count(rplName) == 0) {
-                if(OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle) != OS_DYNLOAD_OK) {
+                OSDynLoad_Error err = OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle);
+                if(err != OS_DYNLOAD_OK || rplHandle == nullptr) {
+                    DEBUG_FUNCTION_LINE("%s is not yet loaded\n", rplName.c_str());
                     // only acquire if not already loaded.
-                    OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+                    err = OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+                    if(err != OS_DYNLOAD_OK){
+                        DEBUG_FUNCTION_LINE("Failed to acquire %s\n", rplName.c_str());
+                        //return false;
+                    }
                 }
                 moduleCache[rplName] = rplHandle;
             }
@@ -81,17 +87,20 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
     return true;
 }
 
-bool ResolveRelocations(const std::vector<ModuleData> &loadedModules) {
+bool ResolveRelocations(std::vector<ModuleData> &loadedModules) {
     bool wasSuccessful = true;
 
-    for (auto const &curModule : loadedModules) {
+    for (auto &curModule : loadedModules) {
         DEBUG_FUNCTION_LINE("Let's do the relocations for %s\n", curModule.getExportName().c_str());
         if (wasSuccessful) {
             std::vector<RelocationData> relocData = curModule.getRelocationDataList();
             if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH)) {
                 DEBUG_FUNCTION_LINE("FAIL\n");
                 wasSuccessful = false;
+                curModule.relocationsDone = false;
             }
+            curModule.relocationsDone = true;
+
         }
         if (curModule.getBSSAddr() != 0) {
             // DEBUG_FUNCTION_LINE("memset .bss %08X (%d)\n", curModule.getBSSAddr(), curModule.getBSSSize());
