@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2018 Maschell
+ * Copyright (C) 2018-2021 Maschell
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,11 +27,9 @@
 
 class ModuleData {
 public:
-    ModuleData() {
-    }
+    ModuleData() = default;
 
-    ~ModuleData() {
-    }
+    ~ModuleData() = default;
 
     void setBSSLocation(uint32_t addr, uint32_t size) {
         this->bssAddr = addr;
@@ -51,15 +49,15 @@ public:
         this->startAddress = addr;
     }
 
-    void setEndAddress(uint32_t endAddress) {
-        this->endAddress = endAddress;
+    void setEndAddress(uint32_t _endAddress) {
+        this->endAddress = _endAddress;
     }
 
     void addRelocationData(const RelocationData &relocation_data) {
         relocation_data_list.push_back(relocation_data);
     }
 
-    const std::vector<RelocationData> &getRelocationDataList() const {
+    [[nodiscard]] const std::vector<RelocationData> &getRelocationDataList() const {
         return relocation_data_list;
     }
 
@@ -67,7 +65,7 @@ public:
         export_data_list.push_back(data);
     }
 
-    const std::vector<ExportData> &getExportDataList() const {
+    [[nodiscard]] const std::vector<ExportData> &getExportDataList() const {
         return export_data_list;
     }
 
@@ -75,7 +73,7 @@ public:
         hook_data_list.push_back(data);
     }
 
-    const std::vector<HookData> &getHookDataList() const {
+    [[nodiscard]] const std::vector<HookData> &getHookDataList() const {
         return hook_data_list;
     }
 
@@ -83,60 +81,60 @@ public:
         section_info_list[sectionInfo.getName()] = sectionInfo;
     }
 
-    const std::map<std::string, SectionInfo> &getSectionInfoList() const {
+    [[nodiscard]] const std::map<std::string, SectionInfo> &getSectionInfoList() const {
         return section_info_list;
     }
 
-    std::optional<SectionInfo> getSectionInfo(const std::string &sectionName) const {
+    [[nodiscard]] std::optional<SectionInfo> getSectionInfo(const std::string &sectionName) const {
         if (getSectionInfoList().count(sectionName) > 0) {
             return section_info_list.at(sectionName);
         }
         return std::nullopt;
     }
 
-    uint32_t getBSSAddr() const {
+    [[nodiscard]] uint32_t getBSSAddr() const {
         return bssAddr;
     }
 
-    uint32_t getBSSSize() const {
+    [[nodiscard]] uint32_t getBSSSize() const {
         return bssSize;
     }
 
-    uint32_t getSBSSAddr() const {
+    [[nodiscard]] uint32_t getSBSSAddr() const {
         return sbssAddr;
     }
 
-    uint32_t getSBSSSize() const {
+    [[nodiscard]] uint32_t getSBSSSize() const {
         return sbssSize;
     }
 
-    uint32_t getEntrypoint() const {
+    [[nodiscard]] uint32_t getEntrypoint() const {
         return entrypoint;
     }
 
-    uint32_t getStartAddress() const {
+    [[nodiscard]] uint32_t getStartAddress() const {
         return startAddress;
     }
 
-    uint32_t getEndAddress() const {
+    [[nodiscard]] uint32_t getEndAddress() const {
         return endAddress;
     }
 
-    std::string toString() const;
+    [[nodiscard]] std::string toString() const;
 
     void setExportName(const std::string &name) {
         this->export_name = name;
     }
 
-    std::string getExportName() const {
+    [[nodiscard]] std::string getExportName() const {
         return this->export_name;
     }
 
-    bool isSkipEntrypoint() const {
+    [[nodiscard]] bool isSkipEntrypoint() const {
         return this->skipEntrypoint;
     }
 
-    bool isInitBeforeRelocationDoneHook() const {
+    [[nodiscard]] bool isInitBeforeRelocationDoneHook() const {
         return this->initBeforeRelocationDoneHook;
     }
 
