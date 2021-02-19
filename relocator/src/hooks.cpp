@@ -17,12 +17,17 @@ void CallHook(const std::vector<ModuleData> &modules, wums_hook_type_t type) {
     }
 }
 
-
 void CallHook(const ModuleData &module, wums_hook_type_t type) {
     if(!module.relocationsDone){
         DEBUG_FUNCTION_LINE("Hook not called because the relocations failed\n");
         return;
     }
+
+    if ((type == WUMS_HOOK_INIT_WUT || type == WUMS_HOOK_FINI_WUT) && module.isSkipWUTInit()) {
+        DEBUG_FUNCTION_LINE("Skip WUMS_HOOK_INIT_WUT/WUMS_HOOK_FINI_WUT for %s\n", module.getExportName().c_str());
+        return;
+    }
+
     for (auto &curHook : module.getHookDataList()) {
         auto func_ptr = (uint32_t) curHook.getTarget();
         if (func_ptr == 0) {

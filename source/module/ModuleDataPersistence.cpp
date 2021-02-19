@@ -73,6 +73,7 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     module_data->entrypoint = module.getEntrypoint();
     module_data->skipEntrypoint = module.isSkipEntrypoint();
     module_data->initBeforeRelocationDoneHook = module.isInitBeforeRelocationDoneHook();
+    module_data->skipWUTInit = module.isSkipWUTInit();
 
     moduleInformation->number_used_modules++;
 

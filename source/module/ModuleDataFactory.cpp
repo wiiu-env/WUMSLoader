@@ -186,22 +186,33 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
                     std::string key(curEntry);
                     std::string value(curEntry + firstFound + 1);
 
-                    if (key.compare("export_name") == 0) {
+                    if (key == "export_name") {
                         DEBUG_FUNCTION_LINE("export_name = %s", value.c_str());
                         moduleData.setExportName(value);
-                    } else if (key.compare("skipEntrypoint") == 0) {
-                        if (value.compare("true") == 0) {
+                    } else if (key == "skipEntrypoint") {
+                        if (value == "true") {
                             DEBUG_FUNCTION_LINE("skipEntrypoint = %s", value.c_str());
                             moduleData.setSkipEntrypoint(true);
+                        } else {
+                            moduleData.setSkipEntrypoint(false);
                         }
-                    } else if (key.compare("initBeforeRelocationDoneHook") == 0) {
-                        if (value.compare("true") == 0) {
+                    } else if (key == "initBeforeRelocationDoneHook") {
+                        if (value == "true") {
                             DEBUG_FUNCTION_LINE("initBeforeRelocationDoneHook = %s", value.c_str());
                             moduleData.setInitBeforeRelocationDoneHook(true);
+                        } else {
+                            moduleData.setInitBeforeRelocationDoneHook(false);
+                        }
+                    } else if (key == "skipwutInit") {
+                        if (value == "true") {
+                            DEBUG_FUNCTION_LINE("skipwutInit = %s", value.c_str());
+                            moduleData.setSkipWUTInit(true);
+                        } else {
+                            moduleData.setSkipWUTInit(false);
                         }
                     }
-                    if (key.compare("wums") == 0) {
-                        if (value.compare("0.1") != 0) {
+                    if (key == "wums") {
+                        if (value != "0.1") {
                             DEBUG_FUNCTION_LINE("Warning: Ignoring module - Unsupported WUMS version: %s.\n", value.c_str());
                             return std::nullopt;
                         }

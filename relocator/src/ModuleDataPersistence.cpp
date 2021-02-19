@@ -32,6 +32,7 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
         moduleData.setStartAddress(module_data->startAddress);
         moduleData.setEndAddress(module_data->endAddress);
         moduleData.setSkipEntrypoint(module_data->skipEntrypoint);
+        moduleData.setSkipWUTInit(module_data->skipWUTInit);
         moduleData.setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
 
         moduleData.setExportName(module_data->module_export_name);
