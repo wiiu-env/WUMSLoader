@@ -7,6 +7,7 @@
 #include <nsysnet/socket.h>
 #include <map>
 #include <algorithm>
+#include <coreinit/memexpheap.h>
 #include "../../source/module/RelocationData.h"
 #include "../../source/module/ModuleData.h"
 #include "ModuleDataPersistence.h"
@@ -14,7 +15,9 @@
 #include "utils/dynamic.h"
 #include "globals.h"
 #include "hooks.h"
+#include "utils/memory.h"
 
+MEMHeapHandle gHeapHandle __attribute__((section(".data"))) = nullptr;
 uint8_t gFunctionsPatched __attribute__((section(".data"))) = 0;
 uint8_t gInitCalled __attribute__((section(".data"))) = 0;
 
@@ -25,6 +28,13 @@ extern "C" void doStart(int argc, char **argv);
 // The compiler tries to optimize this otherwise and calling the main function earlier
 extern "C" int _start(int argc, char **argv) {
     InitFunctionPointers();
+
+    static uint8_t ucSetupRequired = 1;
+    if (ucSetupRequired) {
+        gHeapHandle = MEMCreateExpHeapEx((void *) (MEMORY_REGION_USABLE_HEAP_START), MEMORY_REGION_USABLE_HEAP_END - MEMORY_REGION_USABLE_HEAP_START, 0);
+        ucSetupRequired = 0;
+    }
+
     socket_lib_init();
     log_init();
 
@@ -34,7 +44,7 @@ extern "C" int _start(int argc, char **argv) {
     return ((int (*)(int, char **)) (*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
-bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length) {
+bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length, bool skipAllocReplacement) {
     std::map<std::string, OSDynLoad_Module> moduleCache;
     for (auto const &curReloc : relocData) {
         std::string functionName = curReloc.getName();
@@ -52,16 +62,26 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
             }
         }
 
+        if (!skipAllocReplacement) {
+            if (functionName == "MEMAllocFromDefaultHeap") {
+                functionAddress = reinterpret_cast<uint32_t>(&MEMAlloc);
+            } else if (functionName == "MEMAllocFromDefaultHeapEx") {
+                functionAddress = reinterpret_cast<uint32_t>(&MEMAllocEx);
+            } else if (functionName == "MEMFreeToDefaultHeap") {
+                functionAddress = reinterpret_cast<uint32_t>(&MEMFree);
+            }
+        }
+
         if (functionAddress == 0) {
             int32_t isData = curReloc.getImportRPLInformation().isData();
             OSDynLoad_Module rplHandle = nullptr;
             if (moduleCache.count(rplName) == 0) {
                 OSDynLoad_Error err = OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle);
-                if(err != OS_DYNLOAD_OK || rplHandle == nullptr) {
+                if (err != OS_DYNLOAD_OK || rplHandle == nullptr) {
                     DEBUG_FUNCTION_LINE("%s is not yet loaded\n", rplName.c_str());
                     // only acquire if not already loaded.
                     err = OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
-                    if(err != OS_DYNLOAD_OK){
+                    if (err != OS_DYNLOAD_OK) {
                         DEBUG_FUNCTION_LINE("Failed to acquire %s\n", rplName.c_str());
                         //return false;
                     }
@@ -87,14 +107,21 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
     return true;
 }
 
-bool ResolveRelocations(std::vector<ModuleData> &loadedModules) {
+bool ResolveRelocations(std::vector<ModuleData> &loadedModules, bool skipMemoryMappingModule) {
     bool wasSuccessful = true;
 
     for (auto &curModule : loadedModules) {
         DEBUG_FUNCTION_LINE("Let's do the relocations for %s\n", curModule.getExportName().c_str());
         if (wasSuccessful) {
             std::vector<RelocationData> relocData = curModule.getRelocationDataList();
-            if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH)) {
+
+            // On first usage we can't redirect the alloc functions to our custom heap
+            // because threads can't run it on it. In order to patch the kernel
+            // to fully support our memory region, we have to run the FunctionPatcher and MemoryMapping
+            // once with the default heap. Afterwards we can just rely on the custom heap.
+            bool skipAllocFunction = skipMemoryMappingModule && (curModule.getExportName() == "homebrew_memorymapping" || curModule.getExportName() == "homebrew_functionpatcher");
+            DEBUG_FUNCTION_LINE("Skip alloc replace? %d\n", skipAllocFunction);
+            if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH, skipAllocFunction)) {
                 DEBUG_FUNCTION_LINE("FAIL\n");
                 wasSuccessful = false;
                 curModule.relocationsDone = false;
@@ -124,7 +151,6 @@ extern "C" void doStart(int argc, char **argv) {
     std::vector<ModuleData> loadedModulesUnordered = ModuleDataPersistence::loadModuleData(gModuleData);
     std::vector<ModuleData> loadedModules = OrderModulesByDependencies(loadedModulesUnordered);
 
-
     bool applicationEndHookLoaded = false;
     for (auto &curModule : loadedModules) {
         if (curModule.getExportName() == "homebrew_applicationendshook") {
@@ -150,7 +176,7 @@ extern "C" void doStart(int argc, char **argv) {
         gInitCalled = 1;
 
         DEBUG_FUNCTION_LINE("Resolve relocations without replacing alloc functions\n");
-        ResolveRelocations(loadedModules);
+        ResolveRelocations(loadedModules, true);
 
         for (auto &curModule : loadedModules) {
             if (curModule.isInitBeforeRelocationDoneHook()) {
@@ -181,7 +207,7 @@ extern "C" void doStart(int argc, char **argv) {
         }
     } else {
         DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions\n");
-        ResolveRelocations(loadedModules);
+        ResolveRelocations(loadedModules, false);
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
     }
     CallHook(loadedModules, WUMS_HOOK_INIT_WUT);

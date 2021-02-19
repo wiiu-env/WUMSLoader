@@ -11,6 +11,12 @@ IMPORT(MEMGetSizeForMBlockExpHeap);
 IMPORT(OSSleepTicks);
 IMPORT(OSEffectiveToPhysical);
 IMPORT(OSFatal);
+IMPORT(MEMFreeToExpHeap);
+IMPORT(MEMAllocFromExpHeapEx);
+IMPORT(MEMGetAllocatableSizeForExpHeapEx);
+IMPORT(MEMCreateExpHeapEx);
+IMPORT(OSUninterruptibleSpinLock_Acquire);
+IMPORT(OSUninterruptibleSpinLock_Release);
 
 IMPORT_END();
 

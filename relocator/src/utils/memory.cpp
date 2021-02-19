@@ -17,19 +17,69 @@
 #include <coreinit/memexpheap.h>
 #include <coreinit/memdefaultheap.h>
 #include <coreinit/memorymap.h>
+#include <coreinit/cache.h>
 #include <malloc.h>
 #include <string.h>
 #include <errno.h>
+#include "logger.h"
 
-extern uint32_t *pMEMAllocFromDefaultHeapEx;
-extern uint32_t *pMEMAllocFromDefaultHeap;
-extern uint32_t *pMEMFreeToDefaultHeap;
+extern MEMHeapHandle gHeapHandle;
+
+void *MEMAllocSafe(uint32_t size, uint32_t align) {
+    void *res = nullptr;
+    MEMHeapHandle heapHandle = gHeapHandle;
+    MEMExpHeap *heap = (MEMExpHeap *) heapHandle;
+    OSUninterruptibleSpinLock_Acquire(&heap->header.lock);
+    res = MEMAllocFromExpHeapEx(heapHandle, size, align);
+    auto cur = heap->usedList.head;
+    while (cur != nullptr) {
+        DCFlushRange(cur, sizeof(MEMExpHeapBlock));
+        cur = cur->next;
+    }
+    cur = heap->freeList.head;
+    while (cur != nullptr) {
+        DCFlushRange(cur, sizeof(MEMExpHeapBlock));
+        cur = cur->next;
+    }
+    OSUninterruptibleSpinLock_Release(&heap->header.lock);
+
+    return res;
+}
+
+
+void *MemoryAlloc(uint32_t size) {
+    void *res = MEMAllocSafe(size, 4);
+    if (res == nullptr) {
+        OSFatal_printf("Failed to MemoryAlloc %d", size);
+    }
+    return res;
+}
+
+void *MemoryAllocEx(uint32_t size, uint32_t align) {
+    void *res = MEMAllocSafe(size, align);
+    if (res == nullptr) {
+        OSFatal_printf("Failed to MemoryAllocEX %d %d", size, align);
+    }
+    return res;
+}
+
+void MemoryFree(void *ptr) {
+    if (ptr) {
+        MEMFreeToExpHeap(gHeapHandle, ptr);
+    } else {
+        OSFatal_printf("Failed to free");
+    }
+}
+
+uint32_t MEMAlloc __attribute__((__section__ (".data"))) = (uint32_t) MemoryAlloc;
+uint32_t MEMAllocEx __attribute__((__section__ (".data"))) = (uint32_t) MemoryAllocEx;
+uint32_t MEMFree __attribute__((__section__ (".data"))) = (uint32_t) MemoryFree;
 
 //!-------------------------------------------------------------------------------------------
 //! reent versions
 //!-------------------------------------------------------------------------------------------
 void *_malloc_r(struct _reent *r, size_t size) {
-    void *ptr = ((void *(*)(size_t)) (*pMEMAllocFromDefaultHeap))(size);
+    void *ptr = MemoryAllocEx(size, 4);
     if (!ptr) {
         r->_errno = ENOMEM;
     }
@@ -37,7 +87,7 @@ void *_malloc_r(struct _reent *r, size_t size) {
 }
 
 void *_calloc_r(struct _reent *r, size_t num, size_t size) {
-    void *ptr = ((void *(*)(size_t)) (*pMEMAllocFromDefaultHeap))(size);
+    void *ptr = MemoryAllocEx(num * size, 4);
     if (ptr) {
         memset(ptr, 0, num * size);
     } else {
@@ -48,17 +98,17 @@ void *_calloc_r(struct _reent *r, size_t num, size_t size) {
 }
 
 void *_memalign_r(struct _reent *r, size_t align, size_t size) {
-    return ((void *(*)(size_t, size_t)) (*pMEMAllocFromDefaultHeapEx))(size, align);
+    return MemoryAllocEx(size, align);
 }
 
 void _free_r(struct _reent *r, void *ptr) {
     if (ptr) {
-        ((void (*)(void *)) (*pMEMFreeToDefaultHeap))(ptr);
+        MemoryFree(ptr);
     }
 }
 
 void *_realloc_r(struct _reent *r, void *p, size_t size) {
-    void *new_ptr = ((void *(*)(size_t)) (*pMEMAllocFromDefaultHeap))(size);
+    void *new_ptr = MemoryAllocEx(size, 4);
     if (!new_ptr) {
         r->_errno = ENOMEM;
         return new_ptr;
@@ -67,7 +117,7 @@ void *_realloc_r(struct _reent *r, void *p, size_t size) {
     if (p) {
         size_t old_size = MEMGetSizeForMBlockExpHeap(p);
         memcpy(new_ptr, p, old_size <= size ? old_size : size);
-        ((void (*)(void *)) (*pMEMFreeToDefaultHeap))(p);
+        MemoryFree(p);
     }
     return new_ptr;
 }
@@ -93,12 +143,12 @@ _malloc_usable_size_r(struct _reent *r, void *ptr) {
 
 void *
 _valloc_r(struct _reent *r, size_t size) {
-    return ((void *(*)(size_t, size_t)) (*pMEMAllocFromDefaultHeapEx))(size, OS_PAGE_SIZE);
+    return MemoryAllocEx(size, OS_PAGE_SIZE);
 }
 
 void *
 _pvalloc_r(struct _reent *r, size_t size) {
-    return ((void *(*)(size_t, size_t)) (*pMEMAllocFromDefaultHeapEx))((size + (OS_PAGE_SIZE - 1)) & ~(OS_PAGE_SIZE - 1), OS_PAGE_SIZE);
+    return MemoryAllocEx((size + (OS_PAGE_SIZE - 1)) & ~(OS_PAGE_SIZE - 1), OS_PAGE_SIZE);
 }
 
 int
