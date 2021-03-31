@@ -10,3 +10,4 @@ relocator.h
 .idea/
 cmake-build-debug/
 *.txt
+build1/

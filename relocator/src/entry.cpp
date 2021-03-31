@@ -40,7 +40,7 @@ extern "C" int _start(int argc, char **argv) {
 
     doStart(argc, argv);
 
-    DEBUG_FUNCTION_LINE("Call real one\n");
+    DEBUG_FUNCTION_LINE_VERBOSE("Call real one\n");
     return ((int (*)(int, char **)) (*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
@@ -78,7 +78,7 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
             if (moduleCache.count(rplName) == 0) {
                 OSDynLoad_Error err = OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle);
                 if (err != OS_DYNLOAD_OK || rplHandle == nullptr) {
-                    DEBUG_FUNCTION_LINE("%s is not yet loaded\n", rplName.c_str());
+                    DEBUG_FUNCTION_LINE_VERBOSE("%s is not yet loaded\n", rplName.c_str());
                     // only acquire if not already loaded.
                     err = OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
                     if (err != OS_DYNLOAD_OK) {
@@ -111,7 +111,7 @@ bool ResolveRelocations(std::vector<ModuleData> &loadedModules, bool skipMemoryM
     bool wasSuccessful = true;
 
     for (auto &curModule : loadedModules) {
-        DEBUG_FUNCTION_LINE("Let's do the relocations for %s\n", curModule.getExportName().c_str());
+        DEBUG_FUNCTION_LINE_VERBOSE("Let's do the relocations for %s\n", curModule.getExportName().c_str());
         if (wasSuccessful) {
             std::vector<RelocationData> relocData = curModule.getRelocationDataList();
 
@@ -120,7 +120,7 @@ bool ResolveRelocations(std::vector<ModuleData> &loadedModules, bool skipMemoryM
             // to fully support our memory region, we have to run the FunctionPatcher and MemoryMapping
             // once with the default heap. Afterwards we can just rely on the custom heap.
             bool skipAllocFunction = skipMemoryMappingModule && (curModule.getExportName() == "homebrew_memorymapping" || curModule.getExportName() == "homebrew_functionpatcher");
-            DEBUG_FUNCTION_LINE("Skip alloc replace? %d\n", skipAllocFunction);
+            DEBUG_FUNCTION_LINE_VERBOSE("Skip alloc replace? %d\n", skipAllocFunction);
             if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH, skipAllocFunction)) {
                 DEBUG_FUNCTION_LINE("FAIL\n");
                 wasSuccessful = false;
@@ -154,7 +154,7 @@ extern "C" void doStart(int argc, char **argv) {
     bool applicationEndHookLoaded = false;
     for (auto &curModule : loadedModules) {
         if (curModule.getExportName() == "homebrew_applicationendshook") {
-            DEBUG_FUNCTION_LINE("We have ApplicationEndsHook Module!\n");
+            DEBUG_FUNCTION_LINE_VERBOSE("We have ApplicationEndsHook Module!\n");
             applicationEndHookLoaded = true;
             break;
         }
@@ -171,11 +171,11 @@ extern "C" void doStart(int argc, char **argv) {
         }
     }
 
-    DEBUG_FUNCTION_LINE("Number of modules %d\n", gModuleData->number_used_modules);
+    DEBUG_FUNCTION_LINE_VERBOSE("Number of modules %d\n", gModuleData->number_used_modules);
     if (!gInitCalled) {
         gInitCalled = 1;
 
-        DEBUG_FUNCTION_LINE("Resolve relocations without replacing alloc functions\n");
+        DEBUG_FUNCTION_LINE_VERBOSE("Resolve relocations without replacing alloc functions\n");
         ResolveRelocations(loadedModules, true);
 
         for (auto &curModule : loadedModules) {
@@ -186,15 +186,15 @@ extern "C" void doStart(int argc, char **argv) {
             }
         }
 
-        DEBUG_FUNCTION_LINE("Relocations done\n");
+        DEBUG_FUNCTION_LINE_VERBOSE("Relocations done\n");
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
 
 
         for (int i = 0; i < gModuleData->number_used_modules; i++) {
             if (!gModuleData->module_data[i].skipEntrypoint) {
-                DEBUG_FUNCTION_LINE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
+                DEBUG_FUNCTION_LINE_VERBOSE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
                 int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
-                DEBUG_FUNCTION_LINE("return code was %d\n", ret);
+                DEBUG_FUNCTION_LINE_VERBOSE("return code was %d\n", ret);
             }
         }
 
@@ -206,7 +206,7 @@ extern "C" void doStart(int argc, char **argv) {
             }
         }
     } else {
-        DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions\n");
+        DEBUG_FUNCTION_LINE_VERBOSE("Resolve relocations and replace alloc functions\n");
         ResolveRelocations(loadedModules, false);
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
     }
@@ -229,7 +229,7 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
                 continue;
             }
             canBreak = false;
-            DEBUG_FUNCTION_LINE("Check if we can load %s\n", curModule.getExportName().c_str());
+            DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s\n", curModule.getExportName().c_str());
             std::vector<std::string> importsFromOtherModules;
             for (auto curReloc: curModule.getRelocationDataList()) {
                 std::string curRPL = curReloc.getImportRPLInformation().getName();
@@ -237,7 +237,7 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
                     if (std::find(importsFromOtherModules.begin(), importsFromOtherModules.end(), curRPL) != importsFromOtherModules.end()) {
                         // is already in vector
                     } else {
-                        DEBUG_FUNCTION_LINE("%s is importing from %s\n", curModule.getExportName().c_str(), curRPL.c_str());
+                        DEBUG_FUNCTION_LINE_VERBOSE("%s is importing from %s\n", curModule.getExportName().c_str(), curRPL.c_str());
                         importsFromOtherModules.push_back(curRPL);
                     }
                 }
@@ -247,14 +247,14 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
                 if (std::find(loadedModulesExportNames.begin(), loadedModulesExportNames.end(), curImportRPL) != loadedModulesExportNames.end()) {
 
                 } else {
-                    DEBUG_FUNCTION_LINE("We can't load the module, because %s is not loaded yet\n", curImportRPL.c_str());
+                    DEBUG_FUNCTION_LINE_VERBOSE("We can't load the module, because %s is not loaded yet\n", curImportRPL.c_str());
                     canLoad = false;
                     break;
                 }
             }
             if (canLoad) {
                 weDidSomething = true;
-                DEBUG_FUNCTION_LINE("We can load: %s\n", curModule.getExportName().c_str());
+                DEBUG_FUNCTION_LINE_VERBOSE("We can load: %s\n", curModule.getExportName().c_str());
                 finalOrder.push_back(curModule);
                 loadedModulesExportNames.push_back(curModule.getExportName());
                 loadedModulesEntrypoints.push_back(curModule.getEntrypoint());

@@ -33,6 +33,8 @@ void OSFatal_printf(const char *format, ...);
     log_printf("[%23s]%30s@L%04d: " FMT "",__FILENAME__,__FUNCTION__, __LINE__, ## ARGS); \
     } while (0)
 
+#define DEBUG_FUNCTION_LINE_VERBOSE(FMT, ARGS...) while(0)
+
 #ifdef __cplusplus
 }
 #endif
