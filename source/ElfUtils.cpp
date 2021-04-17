@@ -17,7 +17,7 @@ int32_t LoadFileToMem(const char *relativefilepath, char **fileOut, uint32_t *si
     int result = 0;
     char *sdRootPath = NULL;
     if (!WHBMountSdCard()) {
-        WHBLogPrintf("Failed to mount SD Card...");
+        DEBUG_FUNCTION_LINE("Failed to mount SD Card...");
         result = -1;
         goto exit;
     }
@@ -25,12 +25,12 @@ int32_t LoadFileToMem(const char *relativefilepath, char **fileOut, uint32_t *si
     sdRootPath = WHBGetSdCardMountPath();
     sprintf(path, "%s/%s", sdRootPath, relativefilepath);
 
-    WHBLogPrintf("Loading file %s.", path);
+    DEBUG_FUNCTION_LINE("Loading file %s.", path);
 
     *fileOut = WHBReadWholeFile(path, sizeOut);
     if (!(*fileOut)) {
         result = -2;
-        WHBLogPrintf("WHBReadWholeFile(%s) returned NULL", path);
+        DEBUG_FUNCTION_LINE("WHBReadWholeFile(%s) returned NULL", path);
         goto exit;
     }
 
