@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <coreinit/dynload.h>
 #include <coreinit/cache.h>
-#include <nsysnet/socket.h>
 #include <map>
 #include <algorithm>
 #include <coreinit/memexpheap.h>
@@ -20,6 +19,8 @@
 MEMHeapHandle gHeapHandle __attribute__((section(".data"))) = nullptr;
 uint8_t gFunctionsPatched __attribute__((section(".data"))) = 0;
 uint8_t gInitCalled __attribute__((section(".data"))) = 0;
+
+extern "C" void socket_lib_init();
 
 std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData> &loadedModules);
 
@@ -41,6 +42,8 @@ extern "C" int _start(int argc, char **argv) {
     doStart(argc, argv);
 
     DEBUG_FUNCTION_LINE_VERBOSE("Call real one\n");
+    log_deinit();
+    
     return ((int (*)(int, char **)) (*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
