@@ -21,16 +21,12 @@
 #include <coreinit/cache.h>
 #include <wums.h>
 #include "ModuleDataFactory.h"
-#include "elfio/elfio.hpp"
 #include "utils/utils.h"
 #include "ElfUtils.h"
-#include "SectionInfo.h"
-#include "ExportData.h"
-#include "HookData.h"
 
 using namespace ELFIO;
 
-std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *destination_address_ptr, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
+std::optional<ModuleData> ModuleDataFactory::load(const std::string& path, uint32_t *destination_address_ptr, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
     elfio reader;
     ModuleData moduleData;
 
@@ -42,7 +38,7 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
 
     uint32_t sec_num = reader.sections.size();
 
-    uint8_t **destinations = (uint8_t **) malloc(sizeof(uint8_t *) * sec_num);
+    auto **destinations = (uint8_t **) malloc(sizeof(uint8_t *) * sec_num);
 
     uint32_t baseOffset = *destination_address_ptr;
 
@@ -69,7 +65,7 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
                 return {};
             }
 
-            uint32_t address = (uint32_t) psec->get_address();
+            auto address = (uint32_t) psec->get_address();
 
             destinations[psec->get_index()] = (uint8_t *) baseOffset;
 
@@ -102,17 +98,16 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
             }
 
             //nextAddress = ROUNDUP(destination + sectionSize,0x100);
-            if (psec->get_name().compare(".bss") == 0) {
+            if (psec->get_name() == ".bss") {
                 moduleData.setBSSLocation(destination, sectionSize);
-                DEBUG_FUNCTION_LINE("Saved %s section info. Location: %08X size: %08X", psec->get_name().c_str(), destination, sectionSize);
-            } else if (psec->get_name().compare(".sbss") == 0) {
+                memset(reinterpret_cast<void *>(destination), 0, sectionSize);
+            } else if (psec->get_name() == ".sbss") {
                 moduleData.setSBSSLocation(destination, sectionSize);
-                DEBUG_FUNCTION_LINE("Saved %s section info. Location: %08X size: %08X", psec->get_name().c_str(), destination, sectionSize);
+                memset(reinterpret_cast<void *>(destination), 0, sectionSize);
             }
 
             moduleData.addSectionInfo(SectionInfo(psec->get_name(), destination, sectionSize));
             DEBUG_FUNCTION_LINE("Saved %s section info. Location: %08X size: %08X", psec->get_name().c_str(), destination, sectionSize);
-
 
             if (endAddress < destination + sectionSize) {
                 endAddress = destination + sectionSize;
@@ -143,8 +138,8 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
     std::optional<SectionInfo> secInfo = moduleData.getSectionInfo(".wums.exports");
     if (secInfo && secInfo->getSize() > 0) {
         size_t entries_count = secInfo->getSize() / sizeof(wums_entry_t);
-        wums_entry_t *entries = (wums_entry_t *) secInfo->getAddress();
-        if (entries != NULL) {
+        auto *entries = (wums_entry_t *) secInfo->getAddress();
+        if (entries != nullptr) {
             for (size_t j = 0; j < entries_count; j++) {
                 wums_entry_t *exp = &entries[j];
                 DEBUG_FUNCTION_LINE("Saving export of type %08X, name %s, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, exp->type, exp->name, (void *) exp->address);
@@ -157,8 +152,8 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
     secInfo = moduleData.getSectionInfo(".wums.hooks");
     if (secInfo && secInfo->getSize() > 0) {
         size_t entries_count = secInfo->getSize() / sizeof(wums_hook_t);
-        wums_hook_t *hooks = (wums_hook_t *) secInfo->getAddress();
-        if (hooks != NULL) {
+        auto *hooks = (wums_hook_t *) secInfo->getAddress();
+        if (hooks != nullptr) {
             for (size_t j = 0; j < entries_count; j++) {
                 wums_hook_t *hook = &hooks[j];
                 DEBUG_FUNCTION_LINE("Saving hook of type %08X, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, hook->type, hook->target);
@@ -170,8 +165,8 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
 
     secInfo = moduleData.getSectionInfo(".wums.meta");
     if (secInfo && secInfo->getSize() > 0) {
-        wums_entry_t *entries = (wums_entry_t *) secInfo->getAddress();
-        if (entries != NULL) {
+        auto *entries = (wums_entry_t *) secInfo->getAddress();
+        if (entries != nullptr) {
 
             char *curEntry = (char *) secInfo->getAddress();
             while ((uint32_t) curEntry < (uint32_t) secInfo->getAddress() + secInfo->getSize()) {
@@ -180,7 +175,7 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
                     continue;
                 }
 
-                auto firstFound = std::string(curEntry).find_first_of("=");
+                auto firstFound = std::string(curEntry).find_first_of('=');
                 if (firstFound != std::string::npos) {
                     curEntry[firstFound] = '\0';
                     std::string key(curEntry);
@@ -203,16 +198,8 @@ std::optional<ModuleData> ModuleDataFactory::load(std::string path, uint32_t *de
                         } else {
                             moduleData.setInitBeforeRelocationDoneHook(false);
                         }
-                    } else if (key == "skipwutInit") {
-                        if (value == "true") {
-                            DEBUG_FUNCTION_LINE("skipwutInit = %s", value.c_str());
-                            moduleData.setSkipWUTInit(true);
-                        } else {
-                            moduleData.setSkipWUTInit(false);
-                        }
-                    }
-                    if (key == "wums") {
-                        if (value != "0.1") {
+                    } else if (key == "wums") {
+                        if (value != "0.2") {
                             DEBUG_FUNCTION_LINE("Warning: Ignoring module - Unsupported WUMS version: %s.\n", value.c_str());
                             return std::nullopt;
                         }
@@ -314,7 +301,7 @@ bool ModuleDataFactory::linkSection(elfio &reader, uint32_t section_index, uint3
                     break;
                 }
 
-                uint32_t adjusted_sym_value = (uint32_t) sym_value;
+                auto adjusted_sym_value = (uint32_t) sym_value;
                 if ((adjusted_sym_value >= 0x02000000) && adjusted_sym_value < 0x10000000) {
                     adjusted_sym_value -= 0x02000000;
                     adjusted_sym_value += base_text;

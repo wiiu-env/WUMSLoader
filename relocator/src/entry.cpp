@@ -166,7 +166,7 @@ extern "C" void doStart(int argc, char **argv) {
     // Make sure WUMS_HOOK_APPLICATION_ENDS and WUMS_HOOK_FINI_WUT are called
     for (auto &curModule : loadedModules) {
         for (auto &curHook : curModule.getHookDataList()) {
-            if (curHook.getType() == WUMS_HOOK_APPLICATION_ENDS || curHook.getType() == WUMS_HOOK_FINI_WUT) {
+            if (curHook.getType() == WUMS_HOOK_APPLICATION_ENDS || curHook.getType() == WUMS_HOOK_FINI_WUT_DEVOPTAB) {
                 if (!applicationEndHookLoaded) {
                     OSFatal_printf("%s requires module homebrew_applicationendshook", curModule.getExportName().c_str());
                 }
@@ -183,9 +183,17 @@ extern "C" void doStart(int argc, char **argv) {
 
         for (auto &curModule : loadedModules) {
             if (curModule.isInitBeforeRelocationDoneHook()) {
-                CallHook(loadedModules, WUMS_HOOK_INIT_WUT);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_MALLOC);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_NEWLIB);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_STDCPP);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_DEVOPTAB);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_SOCKETS);
                 CallHook(curModule, WUMS_HOOK_INIT);
-                CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_SOCKETS);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_DEVOPTAB);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_STDCPP);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_NEWLIB);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_MALLOC);
             }
         }
 
@@ -203,9 +211,17 @@ extern "C" void doStart(int argc, char **argv) {
 
         for (auto &curModule : loadedModules) {
             if (!curModule.isInitBeforeRelocationDoneHook()) {
-                CallHook(loadedModules, WUMS_HOOK_INIT_WUT);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_MALLOC);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_NEWLIB);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_STDCPP);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_DEVOPTAB);
+                CallHook(curModule, WUMS_HOOK_INIT_WUT_SOCKETS);
                 CallHook(curModule, WUMS_HOOK_INIT);
-                CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_SOCKETS);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_DEVOPTAB);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_STDCPP);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_NEWLIB);
+                CallHook(curModule, WUMS_HOOK_FINI_WUT_MALLOC);
             }
         }
     } else {
@@ -213,7 +229,11 @@ extern "C" void doStart(int argc, char **argv) {
         ResolveRelocations(loadedModules, false);
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
     }
-    CallHook(loadedModules, WUMS_HOOK_INIT_WUT);
+    CallHook(loadedModules, WUMS_HOOK_INIT_WUT_MALLOC);
+    CallHook(loadedModules, WUMS_HOOK_INIT_WUT_NEWLIB);
+    CallHook(loadedModules, WUMS_HOOK_INIT_WUT_STDCPP);
+    CallHook(loadedModules, WUMS_HOOK_INIT_WUT_DEVOPTAB);
+    CallHook(loadedModules, WUMS_HOOK_INIT_WUT_SOCKETS);
     CallHook(loadedModules, WUMS_HOOK_APPLICATION_STARTS);
     //CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
 }

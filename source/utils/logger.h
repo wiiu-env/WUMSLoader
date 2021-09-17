@@ -14,6 +14,10 @@ extern "C" {
     WHBLogPrintf("[%23s]%30s@L%04d: " FMT "",__FILENAME__,__FUNCTION__, __LINE__, ## ARGS); \
     } while (0)
 
+#define DEBUG_FUNCTION_LINE_WRITE(FMT, ARGS...)do { \
+    WHBLogWritef("[%23s]%30s@L%04d: " FMT "",__FILENAME__,__FUNCTION__, __LINE__, ## ARGS); \
+    } while (0)
+
 #ifdef __cplusplus
 }
 #endif

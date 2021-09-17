@@ -138,19 +138,11 @@ public:
         return this->initBeforeRelocationDoneHook;
     }
 
-    [[nodiscard]] bool isSkipWUTInit() const {
-        return this->skipWUTInit;
-    }
-
     void setSkipEntrypoint(bool value) {
         this->skipEntrypoint = value;
     }
     void setInitBeforeRelocationDoneHook(bool value) {
         this->initBeforeRelocationDoneHook = value;
-    }
-
-    void setSkipWUTInit(bool value) {
-        this->skipWUTInit = value;
     }
 
     bool relocationsDone = false;
@@ -171,5 +163,4 @@ private:
     uint32_t entrypoint = 0;
     bool skipEntrypoint = false;
     bool initBeforeRelocationDoneHook = false;
-    bool skipWUTInit = false;
 };

@@ -28,12 +28,12 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     std::vector<ExportData> exportData = module.getExportDataList();
     for (auto const &curExport : exportData) {
         bool found = false;
-        for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
-            export_data_t *export_entry = &(module_data->export_entries[j]);
-            if (export_entry->address == 0) {
-                export_entry->type = curExport.getType();
-                strncpy(export_entry->name, curExport.getName().c_str(), EXPORT_MAXIMUM_NAME_LENGTH);
-                export_entry->address = (uint32_t) curExport.getAddress();
+        for (auto &export_entry : module_data->export_entries) {
+            if (export_entry.address == 0) {
+                export_entry.type = curExport.getType();
+                export_entry.name[0] = '\0';
+                strncat(export_entry.name, curExport.getName().c_str(), sizeof(export_entry.name) - 1);
+                export_entry.address = (uint32_t) curExport.getAddress();
                 found = true;
                 break;
             }
@@ -47,11 +47,10 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     std::vector<HookData> hookData = module.getHookDataList();
     for (auto const &curHook : hookData) {
         bool found = false;
-        for (uint32_t j = 0; j < HOOK_ENTRY_LIST_LENGTH; j++) {
-            hook_data_t *hook_entry = &(module_data->hook_entries[j]);
-            if (hook_entry->target == 0) {
-                hook_entry->type = curHook.getType();
-                hook_entry->target = (uint32_t) curHook.getTarget();
+        for (auto &hook_entry : module_data->hook_entries) {
+            if (hook_entry.target == 0) {
+                hook_entry.type = curHook.getType();
+                hook_entry.target = (uint32_t) curHook.getTarget();
                 found = true;
                 break;
             }
@@ -73,7 +72,6 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     module_data->entrypoint = module.getEntrypoint();
     module_data->skipEntrypoint = module.isSkipEntrypoint();
     module_data->initBeforeRelocationDoneHook = module.isInitBeforeRelocationDoneHook();
-    module_data->skipWUTInit = module.isSkipWUTInit();
 
     moduleInformation->number_used_modules++;
 
@@ -85,7 +83,7 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
 
 std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
     std::vector<ModuleData> result;
-    if (moduleInformation == NULL) {
+    if (moduleInformation == nullptr) {
         DEBUG_FUNCTION_LINE("moduleInformation == NULL\n");
         return result;
     }
@@ -110,48 +108,38 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
         moduleData.setSkipEntrypoint(module_data->skipEntrypoint);
         moduleData.setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
 
-        for (uint32_t j = 0; j < EXPORT_ENTRY_LIST_LENGTH; j++) {
-            export_data_t *export_entry = &(module_data->export_entries[j]);
+        for (auto &export_entrie : module_data->export_entries) {
+            export_data_t *export_entry = &export_entrie;
             if (export_entry->address == 0) {
                 continue;
             }
             moduleData.addExportData(ExportData(static_cast<wums_entry_type_t>(export_entry->type), export_entry->name, reinterpret_cast<const void *>(export_entry->address)));
         }
 
-        for (uint32_t j = 0; j < HOOK_ENTRY_LIST_LENGTH; j++) {
-            hook_data_t *hook_entry = &(module_data->hook_entries[j]);
-            if (hook_entry->target == 0) {
+        for (auto &hook_entry : module_data->hook_entries) {
+            if (hook_entry.target == 0) {
                 continue;
             }
-            moduleData.addHookData(HookData(static_cast<wums_hook_type_t>(hook_entry->type), reinterpret_cast<const void *>(hook_entry->target)));
+            moduleData.addHookData(HookData(static_cast<wums_hook_type_t>(hook_entry.type), reinterpret_cast<const void *>(hook_entry.target)));
         }
 
-        for (uint32_t j = 0; j < DYN_LINK_RELOCATION_LIST_LENGTH; j++) {
-            dyn_linking_relocation_entry_t *linking_entry = &(module_data->linking_entries[j]);
-            if (linking_entry->destination == 0) {
+        for (auto &linking_entry : module_data->linking_entries) {
+            if (linking_entry.destination == nullptr) {
                 break;
             }
-            dyn_linking_import_t *importEntry = linking_entry->importEntry;
-            if (importEntry == NULL) {
+            dyn_linking_import_t *importEntry = linking_entry.importEntry;
+            if (importEntry == nullptr) {
                 DEBUG_FUNCTION_LINE("importEntry was NULL, skipping relocation entry\n");
                 continue;
             }
-            if (importEntry->importName == NULL) {
-                DEBUG_FUNCTION_LINE("importEntry->importName was NULL, skipping relocation entry\n");
-                continue;
-            }
-            dyn_linking_function_t *functionEntry = linking_entry->functionEntry;
+            dyn_linking_function_t *functionEntry = linking_entry.functionEntry;
 
-            if (functionEntry == NULL) {
+            if (functionEntry == nullptr) {
                 DEBUG_FUNCTION_LINE("functionEntry was NULL, skipping relocation entry\n");
                 continue;
             }
-            if (functionEntry->functionName == NULL) {
-                DEBUG_FUNCTION_LINE("functionEntry->functionName was NULL, skipping relocation entry\n");
-                continue;
-            }
             ImportRPLInformation rplInfo(importEntry->importName, importEntry->isData);
-            RelocationData reloc(linking_entry->type, linking_entry->offset, linking_entry->addend, linking_entry->destination, functionEntry->functionName, rplInfo);
+            RelocationData reloc(linking_entry.type, linking_entry.offset, linking_entry.addend, linking_entry.destination, functionEntry->functionName, rplInfo);
 
             moduleData.addRelocationData(reloc);
         }

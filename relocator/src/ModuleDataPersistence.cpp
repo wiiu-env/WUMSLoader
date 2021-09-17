@@ -30,7 +30,6 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
         moduleData.setStartAddress(module_data->startAddress);
         moduleData.setEndAddress(module_data->endAddress);
         moduleData.setSkipEntrypoint(module_data->skipEntrypoint);
-        moduleData.setSkipWUTInit(module_data->skipWUTInit);
         moduleData.setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
 
         moduleData.setExportName(module_data->module_export_name);
@@ -42,12 +41,11 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
             moduleData.addExportData(ExportData(static_cast<wums_entry_type_t>(export_entry.type), export_entry.name, reinterpret_cast<const void *>(export_entry.address)));
         }
 
-        for (auto & hook_entrie : module_data->hook_entries) {
-            hook_data_t *hook_entry = &hook_entrie;
-            if (hook_entry->target == 0) {
+        for (auto & hook_entry : module_data->hook_entries) {
+            if (hook_entry.target == 0) {
                 continue;
             }
-            moduleData.addHookData(HookData(static_cast<wums_hook_type_t>(hook_entry->type), reinterpret_cast<const void *>(hook_entry->target)));
+            moduleData.addHookData(HookData(static_cast<wums_hook_type_t>(hook_entry.type), reinterpret_cast<const void *>(hook_entry.target)));
         }
 
         for (auto & linking_entry : module_data->linking_entries) {
