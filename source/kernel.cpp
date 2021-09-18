@@ -27,8 +27,8 @@ void KernelWriteU32(uint32_t addr, uint32_t value) {
     ICInvalidateRange(&value, 4);
     DCFlushRange(&value, 4);
 
-    uint32_t dst = (uint32_t) OSEffectiveToPhysical(addr);
-    uint32_t src = (uint32_t) OSEffectiveToPhysical((uint32_t) &value);
+    auto dst = (uint32_t) OSEffectiveToPhysical(addr);
+    auto src = (uint32_t) OSEffectiveToPhysical((uint32_t) &value);
 
     SC_KernelCopyData(dst, src, 4);
 

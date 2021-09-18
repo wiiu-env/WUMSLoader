@@ -18,18 +18,18 @@
 #pragma once
 
 #include <string>
+#include <utility>
 
 class SectionInfo {
 
 public:
     SectionInfo(std::string name, uint32_t address, uint32_t sectionSize) :
-            name(name),
+            name(std::move(name)),
             address(address),
             sectionSize(sectionSize) {
     }
 
-    SectionInfo() {
-    }
+    SectionInfo() = default;
 
     SectionInfo(const SectionInfo &o2) :
             name(o2.name),
@@ -40,24 +40,22 @@ public:
     SectionInfo& operator=(const SectionInfo& other) = default;
 
 
-    virtual ~SectionInfo() {
+    virtual ~SectionInfo() = default;
 
-    }
-
-    const std::string &getName() const {
+    [[nodiscard]] const std::string &getName() const {
         return name;
     }
 
-    uint32_t getAddress() const {
+    [[nodiscard]] uint32_t getAddress() const {
         return address;
     }
 
-    uint32_t getSize() const {
+    [[nodiscard]] uint32_t getSize() const {
         return sectionSize;
     }
 
 private:
     std::string name;
-    uint32_t address;
-    uint32_t sectionSize;
+    uint32_t address{};
+    uint32_t sectionSize{};
 };

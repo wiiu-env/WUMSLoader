@@ -64,7 +64,7 @@ dyn_linking_import_t *DynamicLinkingHelper::getOrAddImport(dyn_linking_relocatio
     return result;
 }
 
-bool DynamicLinkingHelper::addReloationEntry(dyn_linking_relocation_data_t *linking_data, dyn_linking_relocation_entry_t *linking_entries, uint32_t linking_entry_length, const RelocationData &relocationData) {
+bool DynamicLinkingHelper::addRelocationEntry(dyn_linking_relocation_data_t *linking_data, dyn_linking_relocation_entry_t *linking_entries, uint32_t linking_entry_length, const RelocationData &relocationData) {
     return addReloationEntry(linking_data, linking_entries, linking_entry_length, relocationData.getType(), relocationData.getOffset(), relocationData.getAddend(), relocationData.getDestination(), relocationData.getName(),
                              relocationData.getImportRPLInformation());
 }
@@ -83,11 +83,12 @@ bool DynamicLinkingHelper::addReloationEntry(dyn_linking_relocation_data_t *link
         return false;
     }
 
-    return addReloationEntry(linking_entries, linking_entry_length, type, offset, addend, destination, functionInfo, importInfoGbl);
+    return addRelocationEntry(linking_entries, linking_entry_length, type, offset, addend, destination, functionInfo,
+                              importInfoGbl);
 }
 
-bool DynamicLinkingHelper::addReloationEntry(dyn_linking_relocation_entry_t *linking_entries, uint32_t linking_entry_length, char type, size_t offset, int32_t addend, void *destination, dyn_linking_function_t *functionName,
-                                             dyn_linking_import_t *importInfo) {
+bool DynamicLinkingHelper::addRelocationEntry(dyn_linking_relocation_entry_t *linking_entries, uint32_t linking_entry_length, char type, size_t offset, int32_t addend, void *destination, dyn_linking_function_t *functionName,
+                                              dyn_linking_import_t *importInfo) {
     for (uint32_t i = 0; i < linking_entry_length; i++) {
         dyn_linking_relocation_entry_t *curEntry = &(linking_entries[i]);
         if (curEntry->functionEntry != NULL) {

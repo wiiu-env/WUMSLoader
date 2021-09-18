@@ -11,15 +11,15 @@ public:
         this->address = address;
     }
 
-    wums_entry_type_t getType() const {
+    [[nodiscard]] wums_entry_type_t getType() const {
         return type;
     }
 
-    const void *getAddress() const {
+    [[nodiscard]] const void *getAddress() const {
         return address;
     }
 
-    const std::string getName() const {
+    [[nodiscard]] const std::string getName() const {
         return name;
     }
 

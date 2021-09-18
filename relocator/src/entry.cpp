@@ -254,7 +254,7 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
             canBreak = false;
             DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s\n", curModule.getExportName().c_str());
             std::vector<std::string> importsFromOtherModules;
-            for (auto curReloc: curModule.getRelocationDataList()) {
+            for (const auto& curReloc: curModule.getRelocationDataList()) {
                 std::string curRPL = curReloc.getImportRPLInformation().getName();
                 if (curRPL.rfind("homebrew", 0) == 0) {
                     if (std::find(importsFromOtherModules.begin(), importsFromOtherModules.end(), curRPL) != importsFromOtherModules.end()) {

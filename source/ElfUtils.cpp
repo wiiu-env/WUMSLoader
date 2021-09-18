@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-
 #include <coreinit/debug.h>
 #include <coreinit/cache.h>
 #include <coreinit/memdefaultheap.h>
@@ -15,7 +12,7 @@
 int32_t LoadFileToMem(const char *relativefilepath, char **fileOut, uint32_t *sizeOut) {
     char path[256];
     int result = 0;
-    char *sdRootPath = NULL;
+    char *sdRootPath = nullptr;
     if (!WHBMountSdCard()) {
         DEBUG_FUNCTION_LINE("Failed to mount SD Card...");
         result = -1;
@@ -40,7 +37,7 @@ int32_t LoadFileToMem(const char *relativefilepath, char **fileOut, uint32_t *si
 }
 
 uint32_t load_loader_elf_from_sd(unsigned char *baseAddress, const char *relativePath) {
-    char *elf_data = NULL;
+    char *elf_data = nullptr;
     uint32_t fileSize = 0;
     if (LoadFileToMem(relativePath, &elf_data, &fileSize) != 0) {
         OSFatal("Failed to load hook_payload.elf from the SD Card.");
@@ -95,7 +92,7 @@ uint32_t load_loader_elf(unsigned char *baseAddress, char *elf_data, uint32_t fi
     }
 
     //! clear BSS
-    ELFIO::Elf32_Shdr *shdr = (ELFIO::Elf32_Shdr *) (elf_data + ehdr->e_shoff);
+    auto *shdr = (ELFIO::Elf32_Shdr *) (elf_data + ehdr->e_shoff);
     for (i = 0; i < ehdr->e_shnum; i++) {
         const char *section_name = ((const char *) elf_data) + shdr[ehdr->e_shstrndx].sh_offset + shdr[i].sh_name;
         if (section_name[0] == '.' && section_name[1] == 'b' && section_name[2] == 's' && section_name[3] == 's') {
@@ -180,12 +177,12 @@ bool ElfUtils::elfLinkOne(char type, size_t offset, int32_t addend, uint32_t des
             // }
             auto distance = static_cast<int32_t>(value) - static_cast<int32_t>(target);
             if (distance > 0x1FFFFFC || distance < -0x1FFFFFC) {
-                if (trampolin_data == NULL) {
+                if (trampolin_data == nullptr) {
                     DEBUG_FUNCTION_LINE("***24-bit relative branch cannot hit target. Trampolin isn't provided\n");
                     DEBUG_FUNCTION_LINE("***value %08X - target %08X = distance %08X\n", value, target, distance);
                     return false;
                 } else {
-                    relocation_trampolin_entry_t *freeSlot = NULL;
+                    relocation_trampolin_entry_t *freeSlot = nullptr;
                     for (uint32_t i = 0; i < trampolin_data_length; i++) {
                         // We want to override "old" relocations of imports
                         // Pending relocations have the status RELOC_TRAMP_IMPORT_IN_PROGRESS.
@@ -223,7 +220,7 @@ bool ElfUtils::elfLinkOne(char type, size_t offset, int32_t addend, uint32_t des
                         // Relocations for the imports may be overridden
                         freeSlot->status = RELOC_TRAMP_IMPORT_IN_PROGRESS;
                     }
-                    uint32_t symbolValue = (uint32_t) &(freeSlot->trampolin[0]);
+                    auto symbolValue = (uint32_t) &(freeSlot->trampolin[0]);
                     value = symbolValue + addend;
                     distance = static_cast<int32_t>(value) - static_cast<int32_t>(target);
                     DEBUG_FUNCTION_LINE("Created tramp\n");

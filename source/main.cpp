@@ -40,6 +40,7 @@ bool CheckRunning() {
 extern "C" uint32_t textStart();
 
 extern "C" void _SYSLaunchMenuWithCheckingAccount(nn::act::SlotNo slot);
+
 bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length) {
     for (auto const &curReloc : relocData) {
         std::string functionName = curReloc.getName();

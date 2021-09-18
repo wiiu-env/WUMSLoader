@@ -11,3 +11,4 @@ relocator.h
 cmake-build-debug/
 *.txt
 build1/
+cmake-build-default/

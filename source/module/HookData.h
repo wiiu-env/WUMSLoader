@@ -9,11 +9,11 @@ public:
         this->target = target;
     }
 
-    wums_hook_type_t getType() const {
+    [[nodiscard]] wums_hook_type_t getType() const {
         return type;
     }
 
-    const void *getTarget() const {
+    [[nodiscard]] const void *getTarget() const {
         return target;
     }
 

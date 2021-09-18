@@ -19,7 +19,8 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     // Relocation
     std::vector<RelocationData> relocationData = module.getRelocationDataList();
     for (auto const &reloc : relocationData) {
-        if (!DynamicLinkingHelper::addReloationEntry(&(moduleInformation->linking_data), module_data->linking_entries, DYN_LINK_RELOCATION_LIST_LENGTH, reloc)) {
+        if (!DynamicLinkingHelper::addRelocationEntry(&(moduleInformation->linking_data), module_data->linking_entries,
+                                                      DYN_LINK_RELOCATION_LIST_LENGTH, reloc)) {
             DEBUG_FUNCTION_LINE("Failed to add relocation entry\n");
             return false;
         }
