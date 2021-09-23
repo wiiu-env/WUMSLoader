@@ -141,6 +141,7 @@ public:
     void setSkipEntrypoint(bool value) {
         this->skipEntrypoint = value;
     }
+
     void setInitBeforeRelocationDoneHook(bool value) {
         this->initBeforeRelocationDoneHook = value;
     }

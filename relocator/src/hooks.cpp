@@ -28,12 +28,12 @@ void CallHook(const std::vector<ModuleData> &modules, wums_hook_type_t type) {
 }
 
 void CallHook(const ModuleData &module, wums_hook_type_t type) {
-    if(!module.relocationsDone){
+    if (!module.relocationsDone) {
         DEBUG_FUNCTION_LINE("Hook not called because the relocations failed\n");
         return;
     }
 
-    for (auto &curHook : module.getHookDataList()) {
+    for (auto &curHook: module.getHookDataList()) {
         auto func_ptr = (uint32_t) curHook.getTarget();
         if (func_ptr == 0) {
             DEBUG_FUNCTION_LINE("Hook ptr was NULL\n");

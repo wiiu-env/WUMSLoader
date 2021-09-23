@@ -42,13 +42,13 @@ extern "C" uint32_t textStart();
 extern "C" void _SYSLaunchMenuWithCheckingAccount(nn::act::SlotNo slot);
 
 bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length) {
-    for (auto const &curReloc : relocData) {
+    for (auto const &curReloc: relocData) {
         std::string functionName = curReloc.getName();
         std::string rplName = curReloc.getImportRPLInformation().getName();
         int32_t isData = curReloc.getImportRPLInformation().isData();
         OSDynLoad_Module rplHandle = nullptr;
 
-        if(OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle) != OS_DYNLOAD_OK) {
+        if (OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle) != OS_DYNLOAD_OK) {
             // only acquire if not already loaded.
             OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
         }
@@ -83,7 +83,8 @@ int main(int argc, char **argv) {
         uint32_t destination_address = ((uint32_t) gModuleData + (sizeof(module_information_t) + 0x0000FFFF)) & 0xFFFF0000;
         memset((void *) gModuleData, 0, sizeof(module_information_t));
         DEBUG_FUNCTION_LINE("Trying to run %s", setupModules.GetFilepath(i));
-        std::optional<ModuleData> moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), &destination_address, textSectionStart - destination_address, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        std::optional<ModuleData> moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), &destination_address, textSectionStart - destination_address, gModuleData->trampolines,
+                                                                       DYN_LINK_TRAMPOLIN_LIST_LENGTH);
         if (!moduleData) {
             DEBUG_FUNCTION_LINE("Failed to load %s", setupModules.GetFilepath(i));
             continue;
@@ -117,7 +118,8 @@ int main(int argc, char **argv) {
     uint32_t destination_address = ((uint32_t) gModuleData + (sizeof(module_information_t) + 0x0000FFFF)) & 0xFFFF0000;
     for (int i = 0; i < modules.GetFilecount(); i++) {
         DEBUG_FUNCTION_LINE("Loading module %s", modules.GetFilepath(i));
-        std::optional<ModuleData> moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, MEMORY_REGION_USABLE_END - destination_address, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        std::optional<ModuleData> moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, MEMORY_REGION_USABLE_END - destination_address, gModuleData->trampolines,
+                                                                       DYN_LINK_TRAMPOLIN_LIST_LENGTH);
 
         if (moduleData) {
             DEBUG_FUNCTION_LINE("Successfully loaded %s", modules.GetFilepath(i));

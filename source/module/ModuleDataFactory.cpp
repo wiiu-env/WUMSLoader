@@ -26,7 +26,8 @@
 
 using namespace ELFIO;
 
-std::optional<ModuleData> ModuleDataFactory::load(const std::string& path, uint32_t *destination_address_ptr, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
+std::optional<ModuleData>
+ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_ptr, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
     elfio reader;
     ModuleData moduleData;
 
@@ -60,7 +61,7 @@ std::optional<ModuleData> ModuleDataFactory::load(const std::string& path, uint3
             uint32_t sectionSize = psec->get_size();
 
             totalSize += sectionSize;
-            if(totalSize > maximum_size){
+            if (totalSize > maximum_size) {
                 DEBUG_FUNCTION_LINE("Couldn't load setup module because it's too big.");
                 return {};
             }
@@ -131,7 +132,7 @@ std::optional<ModuleData> ModuleDataFactory::load(const std::string& path, uint3
     }
     std::vector<RelocationData> relocationData = getImportRelocationData(reader, destinations);
 
-    for (auto const &reloc : relocationData) {
+    for (auto const &reloc: relocationData) {
         moduleData.addRelocationData(reloc);
     }
 
@@ -280,7 +281,8 @@ std::vector<RelocationData> ModuleDataFactory::getImportRelocationData(elfio &re
     return result;
 }
 
-bool ModuleDataFactory::linkSection(elfio &reader, uint32_t section_index, uint32_t destination, uint32_t base_text, uint32_t base_data, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
+bool ModuleDataFactory::linkSection(elfio &reader, uint32_t section_index, uint32_t destination, uint32_t base_text, uint32_t base_data, relocation_trampolin_entry_t *trampolin_data,
+                                    uint32_t trampolin_data_length) {
     uint32_t sec_num = reader.sections.size();
 
     for (uint32_t i = 0; i < sec_num; ++i) {

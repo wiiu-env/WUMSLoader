@@ -35,31 +35,32 @@ static volatile int log_lock __attribute__((section(".data"))) = 0;
 
 typedef uint16_t sa_family_t;
 
-struct in_addr
-{
-   unsigned int s_addr;
+struct in_addr {
+    unsigned int s_addr;
 };
 
-struct sockaddr
-{
-   sa_family_t sa_family;
-   char sa_data[];
+struct sockaddr {
+    sa_family_t sa_family;
+    char sa_data[];
 };
 
-struct sockaddr_in
-{
-   unsigned short sin_family;
-   unsigned short sin_port;
-   struct in_addr sin_addr;
-   char sin_zero[8];
+struct sockaddr_in {
+    unsigned short sin_family;
+    unsigned short sin_port;
+    struct in_addr sin_addr;
+    char sin_zero[8];
 };
 
 typedef uint32_t socklen_t;
 
 extern int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
+
 extern int socket(int domain, int type, int protocol);
+
 extern int socketclose(int sockfd);
+
 extern int sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
+
 extern uint32_t htonl(uint32_t val);
 
 void log_init() {
@@ -77,11 +78,11 @@ void log_init() {
 }
 
 void log_deinit() {
-    if (log_socket < 0){
+    if (log_socket < 0) {
         return;
     }
-    if(socketclose(log_socket) != 0) {
-      return;
+    if (socketclose(log_socket) != 0) {
+        return;
     }
 }
 

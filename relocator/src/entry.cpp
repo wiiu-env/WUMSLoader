@@ -43,13 +43,13 @@ extern "C" int _start(int argc, char **argv) {
 
     DEBUG_FUNCTION_LINE_VERBOSE("Call real one\n");
     log_deinit();
-    
+
     return ((int (*)(int, char **)) (*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
 bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length, bool skipAllocReplacement) {
     std::map<std::string, OSDynLoad_Module> moduleCache;
-    for (auto const &curReloc : relocData) {
+    for (auto const &curReloc: relocData) {
         std::string functionName = curReloc.getName();
         std::string rplName = curReloc.getImportRPLInformation().getName();
         uint32_t functionAddress = 0;
@@ -113,7 +113,7 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
 bool ResolveRelocations(std::vector<ModuleData> &loadedModules, bool skipMemoryMappingModule) {
     bool wasSuccessful = true;
 
-    for (auto &curModule : loadedModules) {
+    for (auto &curModule: loadedModules) {
         DEBUG_FUNCTION_LINE_VERBOSE("Let's do the relocations for %s\n", curModule.getExportName().c_str());
         if (wasSuccessful) {
             std::vector<RelocationData> relocData = curModule.getRelocationDataList();
@@ -155,7 +155,7 @@ extern "C" void doStart(int argc, char **argv) {
     std::vector<ModuleData> loadedModules = OrderModulesByDependencies(loadedModulesUnordered);
 
     bool applicationEndHookLoaded = false;
-    for (auto &curModule : loadedModules) {
+    for (auto &curModule: loadedModules) {
         if (curModule.getExportName() == "homebrew_applicationendshook") {
             DEBUG_FUNCTION_LINE_VERBOSE("We have ApplicationEndsHook Module!\n");
             applicationEndHookLoaded = true;
@@ -164,8 +164,8 @@ extern "C" void doStart(int argc, char **argv) {
     }
 
     // Make sure WUMS_HOOK_APPLICATION_ENDS and WUMS_HOOK_FINI_WUT are called
-    for (auto &curModule : loadedModules) {
-        for (auto &curHook : curModule.getHookDataList()) {
+    for (auto &curModule: loadedModules) {
+        for (auto &curHook: curModule.getHookDataList()) {
             if (curHook.getType() == WUMS_HOOK_APPLICATION_ENDS || curHook.getType() == WUMS_HOOK_FINI_WUT_DEVOPTAB) {
                 if (!applicationEndHookLoaded) {
                     OSFatal_printf("%s requires module homebrew_applicationendshook", curModule.getExportName().c_str());
@@ -181,7 +181,7 @@ extern "C" void doStart(int argc, char **argv) {
         DEBUG_FUNCTION_LINE_VERBOSE("Resolve relocations without replacing alloc functions\n");
         ResolveRelocations(loadedModules, true);
 
-        for (auto &curModule : loadedModules) {
+        for (auto &curModule: loadedModules) {
             if (curModule.isInitBeforeRelocationDoneHook()) {
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_MALLOC);
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_NEWLIB);
@@ -209,7 +209,7 @@ extern "C" void doStart(int argc, char **argv) {
             }
         }
 
-        for (auto &curModule : loadedModules) {
+        for (auto &curModule: loadedModules) {
             if (!curModule.isInitBeforeRelocationDoneHook()) {
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_MALLOC);
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_NEWLIB);
@@ -246,7 +246,7 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
     while (true) {
         bool canBreak = true;
         bool weDidSomething = false;
-        for (auto const &curModule : loadedModules) {
+        for (auto const &curModule: loadedModules) {
             if (std::find(loadedModulesEntrypoints.begin(), loadedModulesEntrypoints.end(), curModule.getEntrypoint()) != loadedModulesEntrypoints.end()) {
                 // DEBUG_FUNCTION_LINE("%s [%08X] is already loaded\n", curModule.getExportName().c_str(), curModule.getEntrypoint());
                 continue;
@@ -254,7 +254,7 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
             canBreak = false;
             DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s\n", curModule.getExportName().c_str());
             std::vector<std::string> importsFromOtherModules;
-            for (const auto& curReloc: curModule.getRelocationDataList()) {
+            for (const auto &curReloc: curModule.getRelocationDataList()) {
                 std::string curRPL = curReloc.getImportRPLInformation().getName();
                 if (curRPL.rfind("homebrew", 0) == 0) {
                     if (std::find(importsFromOtherModules.begin(), importsFromOtherModules.end(), curRPL) != importsFromOtherModules.end()) {
@@ -266,7 +266,7 @@ std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData>
                 }
             }
             bool canLoad = true;
-            for (auto &curImportRPL : importsFromOtherModules) {
+            for (auto &curImportRPL: importsFromOtherModules) {
                 if (std::find(loadedModulesExportNames.begin(), loadedModulesExportNames.end(), curImportRPL) != loadedModulesExportNames.end()) {
 
                 } else {

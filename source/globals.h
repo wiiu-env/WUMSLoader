@@ -1,8 +1,9 @@
 #pragma once
+
 #include <cstdint>
 #include <wums/defines/module_defines.h>
 
-#define MEMORY_REGION_START	        0x00800000
+#define MEMORY_REGION_START         0x00800000
 #define MEMORY_REGION_SIZE          0x00800000
 
 #define MEMORY_REGION_USABLE_HEAP_START  (MEMORY_REGION_START + 0x00080000)
