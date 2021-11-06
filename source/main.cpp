@@ -8,6 +8,8 @@
 #include <nn/act/client_cpp.h>
 #include <coreinit/dynload.h>
 #include <whb/log_udp.h>
+#include <whb/log_cafe.h>
+#include <whb/log_module.h>
 #include <vector>
 
 #include "fs/DirList.h"
@@ -70,7 +72,10 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
 }
 
 int main(int argc, char **argv) {
-    WHBLogUdpInit();
+    if (!WHBLogModuleInit()) {
+        WHBLogCafeInit();
+        WHBLogUdpInit();
+    }
 
     // 0x100 because before the .text section is a .init section
     // Currently the size of the .init is ~ 0x24 bytes. We substract 0x100 to be safe.

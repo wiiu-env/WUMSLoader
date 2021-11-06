@@ -87,6 +87,7 @@ void log_deinit() {
 }
 
 void log_print(const char *str) {
+    OSReport(str);
     // socket is always 0 initially as it is in the BSS
     if (log_socket < 0) {
         return;
