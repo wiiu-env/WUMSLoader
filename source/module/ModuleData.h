@@ -20,10 +20,12 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include "RelocationData.h"
 #include "SectionInfo.h"
 #include "ExportData.h"
 #include "HookData.h"
+#include "FunctionSymbolData.h"
 
 class ModuleData {
 public:
@@ -79,6 +81,14 @@ public:
 
     void addSectionInfo(const SectionInfo &sectionInfo) {
         section_info_list[sectionInfo.getName()] = sectionInfo;
+    }
+
+    void addFunctionSymbolData(const FunctionSymbolData &symbol_data) {
+        symbol_data_list.insert(symbol_data);
+    }
+
+    [[nodiscard]] const std::set<FunctionSymbolData> &getFunctionSymbolDataList() const {
+        return symbol_data_list;
     }
 
     [[nodiscard]] const std::map<std::string, SectionInfo> &getSectionInfoList() const {
@@ -151,6 +161,7 @@ private:
     std::vector<RelocationData> relocation_data_list;
     std::vector<ExportData> export_data_list;
     std::vector<HookData> hook_data_list;
+    std::set<FunctionSymbolData> symbol_data_list;
     std::map<std::string, SectionInfo> section_info_list;
 
     std::string export_name;

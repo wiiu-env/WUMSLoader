@@ -2,8 +2,6 @@
 
 #include "ModuleDataPersistence.h"
 #include "DynamicLinkingHelper.h"
-#include "ModuleData.h"
-#include "RelocationData.h"
 
 bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformation, const ModuleData &module) {
     int32_t module_count = moduleInformation->number_used_modules;
@@ -15,7 +13,7 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     // Copy data to global struct.
     module_information_single_t *module_data = &(moduleInformation->module_data[module_count]);
 
-    DEBUG_FUNCTION_LINE("Saving reloation data for module at %08X", module.getEntrypoint());
+    DEBUG_FUNCTION_LINE("Saving relocation data for module at %08X", module.getEntrypoint());
     // Relocation
     std::vector<RelocationData> relocationData = module.getRelocationDataList();
     for (auto const &reloc: relocationData) {
@@ -63,6 +61,30 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     }
 
     strncpy(module_data->module_export_name, module.getExportName().c_str(), MAXIMUM_EXPORT_MODULE_NAME_LENGTH);
+
+    uint32_t entryCount = module.getFunctionSymbolDataList().size();
+    if (entryCount > 0) {
+        auto ptr = &moduleInformation->function_symbols[moduleInformation->number_used_function_symbols];
+        module_data->function_symbol_entries = ptr;
+
+        uint32_t sym_offset = 0;
+        for (auto &curFuncSym: module.getFunctionSymbolDataList()) {
+            if (moduleInformation->number_used_function_symbols >= FUNCTION_SYMBOL_LIST_LENGTH) {
+                DEBUG_FUNCTION_LINE("Function symbol list is full");
+                break;
+            }
+            module_data->function_symbol_entries[sym_offset].address = curFuncSym.getAddress();
+            module_data->function_symbol_entries[sym_offset].name = (char *) curFuncSym.getName();
+            module_data->function_symbol_entries[sym_offset].size = curFuncSym.getSize();
+
+            sym_offset++;
+            moduleInformation->number_used_function_symbols++;
+        }
+        module_data->number_used_function_symbols = sym_offset;
+    } else {
+        module_data->function_symbol_entries = nullptr;
+        module_data->number_used_function_symbols = 0;
+    }
 
     module_data->bssAddr = module.getBSSAddr();
     module_data->bssSize = module.getBSSSize();
@@ -143,6 +165,13 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
             RelocationData reloc(linking_entry.type, linking_entry.offset, linking_entry.addend, linking_entry.destination, functionEntry->functionName, rplInfo);
 
             moduleData.addRelocationData(reloc);
+        }
+
+        if (module_data->function_symbol_entries != nullptr && module_data->number_used_function_symbols > 0) {
+            for (uint32_t j = 0; j < module_data->number_used_function_symbols; j++) {
+                auto symbol = &module_data->function_symbol_entries[j];
+                moduleData.addFunctionSymbolData(FunctionSymbolData(symbol->name, symbol->address, symbol->size));
+            }
         }
         result.push_back(moduleData);
     }

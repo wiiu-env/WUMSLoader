@@ -23,6 +23,7 @@
 #include "ModuleDataFactory.h"
 #include "utils/utils.h"
 #include "ElfUtils.h"
+#include "FunctionSymbolData.h"
 
 using namespace ELFIO;
 
@@ -98,7 +99,7 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
                 memcpy((void *) destination, p, sectionSize);
             }
 
-            //nextAddress = ROUNDUP(destination + sectionSize,0x100);
+            //nextAddress = ROUNDUP(destination + sectionSize, 0x100);
             if (psec->get_name() == ".bss") {
                 moduleData.setBSSLocation(destination, sectionSize);
                 memset(reinterpret_cast<void *>(destination), 0, sectionSize);
@@ -200,13 +201,56 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
                             moduleData.setInitBeforeRelocationDoneHook(false);
                         }
                     } else if (key == "wums") {
-                        if (value != "0.2") {
+                        if (value != "0.3") {
                             DEBUG_FUNCTION_LINE("Warning: Ignoring module - Unsupported WUMS version: %s.\n", value.c_str());
                             return std::nullopt;
                         }
                     }
                 }
                 curEntry += strlen(curEntry) + 1;
+            }
+        }
+    }
+
+    char *strTable = (char *) endAddress;
+    uint32_t strOffset = 0;
+
+    // Get the symbol for functions.
+    Elf_Half n = reader.sections.size();
+    for (Elf_Half i = 0; i < n; ++i) {
+        section *sec = reader.sections[i];
+        if (SHT_SYMTAB == sec->get_type()) {
+            symbol_section_accessor symbols(reader, sec);
+            auto sym_no = (uint32_t) symbols.get_symbols_num();
+            if (sym_no > 0) {
+                for (Elf_Half j = 0; j < sym_no; ++j) {
+                    std::string name;
+                    Elf64_Addr value = 0;
+                    Elf_Xword size = 0;
+                    unsigned char bind = 0;
+                    unsigned char type = 0;
+                    Elf_Half section = 0;
+                    unsigned char other = 0;
+                    if (symbols.get_symbol(j, name, value, size, bind, type, section, other)) {
+                        if (type == STT_FUNC) { // We only care about functions.
+                            auto sectionVal = reader.sections[section];
+                            auto offsetVal = value - sectionVal->get_address();
+                            auto sectionOpt = moduleData.getSectionInfo(sectionVal->get_name());
+                            if (!sectionOpt.has_value()) {
+                                continue;
+                            }
+                            auto finalAddress = offsetVal + sectionOpt->getAddress();
+
+                            uint32_t stringSize = name.size() + 1;
+                            memcpy(strTable + strOffset, name.c_str(), stringSize);
+                            moduleData.addFunctionSymbolData(FunctionSymbolData(strTable + strOffset, (void *) finalAddress, (uint32_t) size));
+                            strOffset += stringSize;
+                            totalSize += stringSize;
+                            endAddress += stringSize;
+                        }
+                    }
+                }
+                break;
             }
         }
     }

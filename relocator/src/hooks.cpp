@@ -20,14 +20,14 @@ static const char **hook_names = (const char *[]) {
         "WUMS_HOOK_RELOCATIONS_DONE",
         "WUMS_HOOK_APPLICATION_REQUESTS_EXI"};
 
-void CallHook(const std::vector<ModuleData> &modules, wums_hook_type_t type) {
+void CallHook(const std::vector<ModuleDataMinimal> &modules, wums_hook_type_t type) {
     DEBUG_FUNCTION_LINE_VERBOSE("Calling hook of type %s [%d] for all modules\n", hook_names[type], type);
     for (auto &curModule: modules) {
         CallHook(curModule, type);
     }
 }
 
-void CallHook(const ModuleData &module, wums_hook_type_t type) {
+void CallHook(const ModuleDataMinimal &module, wums_hook_type_t type) {
     if (!module.relocationsDone) {
         DEBUG_FUNCTION_LINE("Hook not called because the relocations failed\n");
         return;

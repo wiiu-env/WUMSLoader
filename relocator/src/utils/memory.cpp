@@ -28,21 +28,7 @@ extern MEMHeapHandle gHeapHandle;
 void *MEMAllocSafe(uint32_t size, uint32_t align) {
     void *res = nullptr;
     MEMHeapHandle heapHandle = gHeapHandle;
-    MEMExpHeap *heap = (MEMExpHeap *) heapHandle;
-    OSUninterruptibleSpinLock_Acquire(&heap->header.lock);
     res = MEMAllocFromExpHeapEx(heapHandle, size, align);
-    auto cur = heap->usedList.head;
-    while (cur != nullptr) {
-        DCFlushRange(cur, sizeof(MEMExpHeapBlock));
-        cur = cur->next;
-    }
-    cur = heap->freeList.head;
-    while (cur != nullptr) {
-        DCFlushRange(cur, sizeof(MEMExpHeapBlock));
-        cur = cur->next;
-    }
-    OSUninterruptibleSpinLock_Release(&heap->header.lock);
-
     return res;
 }
 

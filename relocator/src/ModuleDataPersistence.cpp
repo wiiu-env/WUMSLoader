@@ -3,8 +3,8 @@
 #include <coreinit/cache.h>
 #include <wums.h>
 
-std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
-    std::vector<ModuleData> result;
+std::vector<ModuleDataMinimal> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
+    std::vector<ModuleDataMinimal> result;
     if (moduleInformation == nullptr) {
         DEBUG_FUNCTION_LINE("moduleInformation == NULL\n");
         return result;
@@ -22,24 +22,11 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
     for (int32_t i = 0; i < module_count; i++) {
         // Copy data from struct.
         module_information_single_t *module_data = &(moduleInformation->module_data[i]);
-        ModuleData moduleData;
+        ModuleDataMinimal moduleData;
 
-        moduleData.setBSSLocation(module_data->bssAddr, module_data->bssSize);
-        moduleData.setSBSSLocation(module_data->sbssAddr, module_data->sbssSize);
         moduleData.setEntrypoint(module_data->entrypoint);
-        moduleData.setStartAddress(module_data->startAddress);
-        moduleData.setEndAddress(module_data->endAddress);
-        moduleData.setSkipEntrypoint(module_data->skipEntrypoint);
         moduleData.setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
-
         moduleData.setExportName(module_data->module_export_name);
-
-        for (auto &export_entry: module_data->export_entries) {
-            if (export_entry.address == 0) {
-                continue;
-            }
-            moduleData.addExportData(ExportData(static_cast<wums_entry_type_t>(export_entry.type), export_entry.name, reinterpret_cast<const void *>(export_entry.address)));
-        }
 
         for (auto &hook_entry: module_data->hook_entries) {
             if (hook_entry.target == 0) {
@@ -76,6 +63,7 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
 
             moduleData.addRelocationData(reloc);
         }
+
         result.push_back(moduleData);
     }
     return result;

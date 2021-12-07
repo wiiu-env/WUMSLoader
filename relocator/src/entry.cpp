@@ -1,20 +1,19 @@
 #include <vector>
 #include <string>
-#include <cstring>
 #include <cstdint>
 #include <coreinit/dynload.h>
 #include <coreinit/cache.h>
 #include <map>
 #include <algorithm>
 #include <coreinit/memexpheap.h>
+#include "utils/logger.h"
+#include "utils/memory.h"
 #include "../../source/module/RelocationData.h"
-#include "../../source/module/ModuleData.h"
 #include "ModuleDataPersistence.h"
 #include "ElfUtils.h"
 #include "utils/dynamic.h"
 #include "globals.h"
 #include "hooks.h"
-#include "utils/memory.h"
 
 MEMHeapHandle gHeapHandle __attribute__((section(".data"))) = nullptr;
 uint8_t gFunctionsPatched __attribute__((section(".data"))) = 0;
@@ -22,7 +21,7 @@ uint8_t gInitCalled __attribute__((section(".data"))) = 0;
 
 extern "C" void socket_lib_init();
 
-std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData> &loadedModules);
+std::vector<ModuleDataMinimal> OrderModulesByDependencies(const std::vector<ModuleDataMinimal> &loadedModules);
 
 extern "C" void doStart(int argc, char **argv);
 // We need to wrap it to make sure the main function is called AFTER our code.
@@ -32,7 +31,7 @@ extern "C" int _start(int argc, char **argv) {
 
     static uint8_t ucSetupRequired = 1;
     if (ucSetupRequired) {
-        gHeapHandle = MEMCreateExpHeapEx((void *) (MEMORY_REGION_USABLE_HEAP_START), MEMORY_REGION_USABLE_HEAP_END - MEMORY_REGION_USABLE_HEAP_START, 0);
+        gHeapHandle = MEMCreateExpHeapEx((void *) (MEMORY_REGION_USABLE_HEAP_START), MEMORY_REGION_USABLE_HEAP_END - MEMORY_REGION_USABLE_HEAP_START, 1);
         ucSetupRequired = 0;
     }
 
@@ -110,7 +109,7 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
     return true;
 }
 
-bool ResolveRelocations(std::vector<ModuleData> &loadedModules, bool skipMemoryMappingModule) {
+bool ResolveRelocations(std::vector<ModuleDataMinimal> &loadedModules, bool skipMemoryMappingModule) {
     bool wasSuccessful = true;
 
     for (auto &curModule: loadedModules) {
@@ -132,14 +131,6 @@ bool ResolveRelocations(std::vector<ModuleData> &loadedModules, bool skipMemoryM
             curModule.relocationsDone = true;
 
         }
-        if (curModule.getBSSAddr() != 0) {
-            // DEBUG_FUNCTION_LINE("memset .bss %08X (%d)\n", curModule.getBSSAddr(), curModule.getBSSSize());
-            // memset((void *) curModule.getBSSAddr(), 0, curModule.getBSSSize());
-        }
-        if (curModule.getSBSSAddr() != 0) {
-            // DEBUG_FUNCTION_LINE("memset .sbss %08X (%d)\n", curModule.getSBSSAddr(), curModule.getSBSSSize());
-            // memset((void *) curModule.getSBSSAddr(), 0, curModule.getSBSSSize());
-        }
     }
     DCFlushRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
     ICInvalidateRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
@@ -151,8 +142,8 @@ extern "C" void doStart(int argc, char **argv) {
         gFunctionsPatched = 1;
     }
     DEBUG_FUNCTION_LINE("Loading module data\n");
-    std::vector<ModuleData> loadedModulesUnordered = ModuleDataPersistence::loadModuleData(gModuleData);
-    std::vector<ModuleData> loadedModules = OrderModulesByDependencies(loadedModulesUnordered);
+    auto loadedModulesUnordered = ModuleDataPersistence::loadModuleData(gModuleData);
+    auto loadedModules = OrderModulesByDependencies(loadedModulesUnordered);
 
     bool applicationEndHookLoaded = false;
     for (auto &curModule: loadedModules) {
@@ -238,8 +229,8 @@ extern "C" void doStart(int argc, char **argv) {
     //CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
 }
 
-std::vector<ModuleData> OrderModulesByDependencies(const std::vector<ModuleData> &loadedModules) {
-    std::vector<ModuleData> finalOrder;
+std::vector<ModuleDataMinimal> OrderModulesByDependencies(const std::vector<ModuleDataMinimal> &loadedModules) {
+    std::vector<ModuleDataMinimal> finalOrder;
     std::vector<std::string> loadedModulesExportNames;
     std::vector<uint32_t> loadedModulesEntrypoints;
 
