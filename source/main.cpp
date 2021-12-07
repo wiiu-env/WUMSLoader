@@ -20,7 +20,6 @@
 #include "globals.h"
 
 bool CheckRunning() {
-
     switch (ProcUIProcessMessages(true)) {
         case PROCUI_STATUS_EXITING: {
             return false;
@@ -99,17 +98,9 @@ int main(int argc, char **argv) {
         if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH)) {
             DEBUG_FUNCTION_LINE("relocations failed\n");
         }
-        if (moduleData->getBSSAddr() != 0) {
-            DEBUG_FUNCTION_LINE("memset .bss %08X (%d)", moduleData->getBSSAddr(), moduleData->getBSSSize());
-            memset((void *) moduleData->getBSSAddr(), 0, moduleData->getBSSSize());
-        }
-        if (moduleData->getSBSSAddr() != 0) {
-            DEBUG_FUNCTION_LINE("memset .sbss %08X (%d)", moduleData->getSBSSAddr(), moduleData->getSBSSSize());
-            memset((void *) moduleData->getSBSSAddr(), 0, moduleData->getSBSSSize());
-        }
-        DCFlushRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
-        ICInvalidateRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
-        DEBUG_FUNCTION_LINE("Calling %08X", moduleData->getEntrypoint());
+        DCFlushRange((void *) moduleData->getStartAddress(), moduleData->getEndAddress() - moduleData->getStartAddress());
+        ICInvalidateRange((void *) moduleData->getStartAddress(), moduleData->getEndAddress() - moduleData->getStartAddress());
+        DEBUG_FUNCTION_LINE("Calling entrypoint @%08X", moduleData->getEntrypoint());
         ((int (*)(int, char **)) moduleData->getEntrypoint())(argc, argv);
         DEBUG_FUNCTION_LINE("Back from module");
     }
@@ -123,7 +114,7 @@ int main(int argc, char **argv) {
     uint32_t destination_address = ((uint32_t) gModuleData + (sizeof(module_information_t) + 0x0000FFFF)) & 0xFFFF0000;
     for (int i = 0; i < modules.GetFilecount(); i++) {
         DEBUG_FUNCTION_LINE("Loading module %s", modules.GetFilepath(i));
-        std::optional<ModuleData> moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, MEMORY_REGION_USABLE_END - destination_address, gModuleData->trampolines,
+        auto moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, MEMORY_REGION_USABLE_END - destination_address, gModuleData->trampolines,
                                                                        DYN_LINK_TRAMPOLIN_LIST_LENGTH);
 
         if (moduleData) {
