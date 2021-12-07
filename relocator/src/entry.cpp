@@ -21,7 +21,7 @@ uint8_t gInitCalled __attribute__((section(".data"))) = 0;
 
 extern "C" void socket_lib_init();
 
-std::vector<ModuleDataMinimal> OrderModulesByDependencies(const std::vector<ModuleDataMinimal> &loadedModules);
+std::vector<std::shared_ptr<ModuleDataMinimal>> OrderModulesByDependencies(const std::vector<std::shared_ptr<ModuleDataMinimal>> &loadedModules);
 
 extern "C" void doStart(int argc, char **argv);
 // We need to wrap it to make sure the main function is called AFTER our code.
@@ -46,11 +46,11 @@ extern "C" int _start(int argc, char **argv) {
     return ((int (*)(int, char **)) (*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
-bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length, bool skipAllocReplacement) {
+bool doRelocation(std::vector<std::shared_ptr<RelocationData>> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length, bool skipAllocReplacement) {
     std::map<std::string, OSDynLoad_Module> moduleCache;
     for (auto const &curReloc: relocData) {
-        std::string functionName = curReloc.getName();
-        std::string rplName = curReloc.getImportRPLInformation().getName();
+        std::string functionName = curReloc->getName();
+        std::string rplName = curReloc->getImportRPLInformation()->getName();
         uint32_t functionAddress = 0;
 
         for (uint32_t i = 0; i < MAXIMUM_MODULES; i++) {
@@ -75,7 +75,7 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
         }
 
         if (functionAddress == 0) {
-            int32_t isData = curReloc.getImportRPLInformation().isData();
+            int32_t isData = curReloc->getImportRPLInformation()->isData();
             OSDynLoad_Module rplHandle = nullptr;
             if (moduleCache.count(rplName) == 0) {
                 OSDynLoad_Error err = OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle);
@@ -98,7 +98,8 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
                 return false;
             }
         }
-        if (!ElfUtils::elfLinkOne(curReloc.getType(), curReloc.getOffset(), curReloc.getAddend(), (uint32_t) curReloc.getDestination(), functionAddress, tramp_data, tramp_length, RELOC_TYPE_IMPORT)) {
+        if (!ElfUtils::elfLinkOne(curReloc->getType(), curReloc->getOffset(), curReloc->getAddend(), (uint32_t) curReloc->getDestination(), functionAddress, tramp_data, tramp_length,
+                                  RELOC_TYPE_IMPORT)) {
             DEBUG_FUNCTION_LINE("Relocation failed\n");
             return false;
         }
@@ -109,26 +110,26 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
     return true;
 }
 
-bool ResolveRelocations(std::vector<ModuleDataMinimal> &loadedModules, bool skipMemoryMappingModule) {
+bool ResolveRelocations(std::vector<std::shared_ptr<ModuleDataMinimal>> &loadedModules, bool skipMemoryMappingModule) {
     bool wasSuccessful = true;
 
     for (auto &curModule: loadedModules) {
-        DEBUG_FUNCTION_LINE_VERBOSE("Let's do the relocations for %s\n", curModule.getExportName().c_str());
+        DEBUG_FUNCTION_LINE_VERBOSE("Let's do the relocations for %s\n", curModule->getExportName().c_str());
         if (wasSuccessful) {
-            std::vector<RelocationData> relocData = curModule.getRelocationDataList();
+            auto relocData = curModule->getRelocationDataList();
 
             // On first usage we can't redirect the alloc functions to our custom heap
             // because threads can't run it on it. In order to patch the kernel
             // to fully support our memory region, we have to run the FunctionPatcher and MemoryMapping
             // once with the default heap. Afterwards we can just rely on the custom heap.
-            bool skipAllocFunction = skipMemoryMappingModule && (curModule.getExportName() == "homebrew_memorymapping" || curModule.getExportName() == "homebrew_functionpatcher");
+            bool skipAllocFunction = skipMemoryMappingModule && (curModule->getExportName() == "homebrew_memorymapping" || curModule->getExportName() == "homebrew_functionpatcher");
             DEBUG_FUNCTION_LINE_VERBOSE("Skip alloc replace? %d\n", skipAllocFunction);
             if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH, skipAllocFunction)) {
                 DEBUG_FUNCTION_LINE("FAIL\n");
                 wasSuccessful = false;
-                curModule.relocationsDone = false;
+                curModule->relocationsDone = false;
             }
-            curModule.relocationsDone = true;
+            curModule->relocationsDone = true;
 
         }
     }
@@ -147,7 +148,7 @@ extern "C" void doStart(int argc, char **argv) {
 
     bool applicationEndHookLoaded = false;
     for (auto &curModule: loadedModules) {
-        if (curModule.getExportName() == "homebrew_applicationendshook") {
+        if (curModule->getExportName() == "homebrew_applicationendshook") {
             DEBUG_FUNCTION_LINE_VERBOSE("We have ApplicationEndsHook Module!\n");
             applicationEndHookLoaded = true;
             break;
@@ -156,10 +157,10 @@ extern "C" void doStart(int argc, char **argv) {
 
     // Make sure WUMS_HOOK_APPLICATION_ENDS and WUMS_HOOK_FINI_WUT are called
     for (auto &curModule: loadedModules) {
-        for (auto &curHook: curModule.getHookDataList()) {
-            if (curHook.getType() == WUMS_HOOK_APPLICATION_ENDS || curHook.getType() == WUMS_HOOK_FINI_WUT_DEVOPTAB) {
+        for (auto &curHook: curModule->getHookDataList()) {
+            if (curHook->getType() == WUMS_HOOK_APPLICATION_ENDS || curHook->getType() == WUMS_HOOK_FINI_WUT_DEVOPTAB) {
                 if (!applicationEndHookLoaded) {
-                    OSFatal_printf("%s requires module homebrew_applicationendshook", curModule.getExportName().c_str());
+                    OSFatal_printf("%s requires module homebrew_applicationendshook", curModule->getExportName().c_str());
                 }
             }
         }
@@ -173,7 +174,7 @@ extern "C" void doStart(int argc, char **argv) {
         ResolveRelocations(loadedModules, true);
 
         for (auto &curModule: loadedModules) {
-            if (curModule.isInitBeforeRelocationDoneHook()) {
+            if (curModule->isInitBeforeRelocationDoneHook()) {
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_MALLOC);
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_NEWLIB);
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_STDCPP);
@@ -191,7 +192,6 @@ extern "C" void doStart(int argc, char **argv) {
         DEBUG_FUNCTION_LINE_VERBOSE("Relocations done\n");
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
 
-
         for (int i = 0; i < gModuleData->number_used_modules; i++) {
             if (!gModuleData->module_data[i].skipEntrypoint) {
                 DEBUG_FUNCTION_LINE_VERBOSE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
@@ -201,7 +201,7 @@ extern "C" void doStart(int argc, char **argv) {
         }
 
         for (auto &curModule: loadedModules) {
-            if (!curModule.isInitBeforeRelocationDoneHook()) {
+            if (!curModule->isInitBeforeRelocationDoneHook()) {
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_MALLOC);
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_NEWLIB);
                 CallHook(curModule, WUMS_HOOK_INIT_WUT_STDCPP);
@@ -220,6 +220,7 @@ extern "C" void doStart(int argc, char **argv) {
         ResolveRelocations(loadedModules, false);
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
     }
+
     CallHook(loadedModules, WUMS_HOOK_INIT_WUT_MALLOC);
     CallHook(loadedModules, WUMS_HOOK_INIT_WUT_NEWLIB);
     CallHook(loadedModules, WUMS_HOOK_INIT_WUT_STDCPP);
@@ -229,8 +230,8 @@ extern "C" void doStart(int argc, char **argv) {
     //CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
 }
 
-std::vector<ModuleDataMinimal> OrderModulesByDependencies(const std::vector<ModuleDataMinimal> &loadedModules) {
-    std::vector<ModuleDataMinimal> finalOrder;
+std::vector<std::shared_ptr<ModuleDataMinimal>> OrderModulesByDependencies(const std::vector<std::shared_ptr<ModuleDataMinimal>> &loadedModules) {
+    std::vector<std::shared_ptr<ModuleDataMinimal>> finalOrder;
     std::vector<std::string> loadedModulesExportNames;
     std::vector<uint32_t> loadedModulesEntrypoints;
 
@@ -238,20 +239,20 @@ std::vector<ModuleDataMinimal> OrderModulesByDependencies(const std::vector<Modu
         bool canBreak = true;
         bool weDidSomething = false;
         for (auto const &curModule: loadedModules) {
-            if (std::find(loadedModulesEntrypoints.begin(), loadedModulesEntrypoints.end(), curModule.getEntrypoint()) != loadedModulesEntrypoints.end()) {
-                // DEBUG_FUNCTION_LINE("%s [%08X] is already loaded\n", curModule.getExportName().c_str(), curModule.getEntrypoint());
+            if (std::find(loadedModulesEntrypoints.begin(), loadedModulesEntrypoints.end(), curModule->getEntrypoint()) != loadedModulesEntrypoints.end()) {
+                // DEBUG_FUNCTION_LINE("%s [%08X] is already loaded\n", curModule->getExportName().c_str(), curModule->getEntrypoint());
                 continue;
             }
             canBreak = false;
-            DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s\n", curModule.getExportName().c_str());
+            DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s\n", curModule->getExportName().c_str());
             std::vector<std::string> importsFromOtherModules;
-            for (const auto &curReloc: curModule.getRelocationDataList()) {
-                std::string curRPL = curReloc.getImportRPLInformation().getName();
+            for (const auto &curReloc: curModule->getRelocationDataList()) {
+                std::string curRPL = curReloc->getImportRPLInformation()->getName();
                 if (curRPL.rfind("homebrew", 0) == 0) {
                     if (std::find(importsFromOtherModules.begin(), importsFromOtherModules.end(), curRPL) != importsFromOtherModules.end()) {
                         // is already in vector
                     } else {
-                        DEBUG_FUNCTION_LINE_VERBOSE("%s is importing from %s\n", curModule.getExportName().c_str(), curRPL.c_str());
+                        DEBUG_FUNCTION_LINE_VERBOSE("%s is importing from %s\n", curModule->getExportName().c_str(), curRPL.c_str());
                         importsFromOtherModules.push_back(curRPL);
                     }
                 }
@@ -268,10 +269,10 @@ std::vector<ModuleDataMinimal> OrderModulesByDependencies(const std::vector<Modu
             }
             if (canLoad) {
                 weDidSomething = true;
-                DEBUG_FUNCTION_LINE_VERBOSE("We can load: %s\n", curModule.getExportName().c_str());
+                DEBUG_FUNCTION_LINE_VERBOSE("We can load: %s\n", curModule->getExportName().c_str());
                 finalOrder.push_back(curModule);
-                loadedModulesExportNames.push_back(curModule.getExportName());
-                loadedModulesEntrypoints.push_back(curModule.getEntrypoint());
+                loadedModulesExportNames.push_back(curModule->getExportName());
+                loadedModulesEntrypoints.push_back(curModule->getEntrypoint());
             }
         }
         if (canBreak) {

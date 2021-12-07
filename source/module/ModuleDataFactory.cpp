@@ -27,10 +27,10 @@
 
 using namespace ELFIO;
 
-std::optional<ModuleData>
+std::optional<std::shared_ptr<ModuleData>>
 ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_ptr, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
     elfio reader;
-    ModuleData moduleData;
+    std::shared_ptr<ModuleData> moduleData = std::make_shared<ModuleData>();
 
     // Load ELF data
     if (!reader.load(path)) {
@@ -101,14 +101,14 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
 
             //nextAddress = ROUNDUP(destination + sectionSize, 0x100);
             if (psec->get_name() == ".bss") {
-                moduleData.setBSSLocation(destination, sectionSize);
+                moduleData->setBSSLocation(destination, sectionSize);
                 memset(reinterpret_cast<void *>(destination), 0, sectionSize);
             } else if (psec->get_name() == ".sbss") {
-                moduleData.setSBSSLocation(destination, sectionSize);
+                moduleData->setSBSSLocation(destination, sectionSize);
                 memset(reinterpret_cast<void *>(destination), 0, sectionSize);
             }
-
-            moduleData.addSectionInfo(SectionInfo(psec->get_name(), destination, sectionSize));
+            auto sectionInfo = std::make_shared<SectionInfo>(psec->get_name(), destination, sectionSize);
+            moduleData->addSectionInfo(sectionInfo);
             DEBUG_FUNCTION_LINE("Saved %s section info. Location: %08X size: %08X", psec->get_name().c_str(), destination, sectionSize);
 
             if (endAddress < destination + sectionSize) {
@@ -131,47 +131,47 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
             }
         }
     }
-    std::vector<RelocationData> relocationData = getImportRelocationData(reader, destinations);
+    auto relocationData = getImportRelocationData(reader, destinations);
 
     for (auto const &reloc: relocationData) {
-        moduleData.addRelocationData(reloc);
+        moduleData->addRelocationData(reloc);
     }
 
-    std::optional<SectionInfo> secInfo = moduleData.getSectionInfo(".wums.exports");
-    if (secInfo && secInfo->getSize() > 0) {
-        size_t entries_count = secInfo->getSize() / sizeof(wums_entry_t);
-        auto *entries = (wums_entry_t *) secInfo->getAddress();
+    auto secInfo = moduleData->getSectionInfo(".wums.exports");
+    if (secInfo && secInfo.value()->getSize() > 0) {
+        size_t entries_count = secInfo.value()->getSize() / sizeof(wums_entry_t);
+        auto *entries = (wums_entry_t *) secInfo.value()->getAddress();
         if (entries != nullptr) {
             for (size_t j = 0; j < entries_count; j++) {
                 wums_entry_t *exp = &entries[j];
                 DEBUG_FUNCTION_LINE("Saving export of type %08X, name %s, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, exp->type, exp->name, (void *) exp->address);
-                ExportData export_data(exp->type, exp->name, exp->address);
-                moduleData.addExportData(export_data);
+                auto exportData = std::make_shared<ExportData>(exp->type, exp->name, exp->address);
+                moduleData->addExportData(exportData);
             }
         }
     }
 
-    secInfo = moduleData.getSectionInfo(".wums.hooks");
-    if (secInfo && secInfo->getSize() > 0) {
-        size_t entries_count = secInfo->getSize() / sizeof(wums_hook_t);
-        auto *hooks = (wums_hook_t *) secInfo->getAddress();
+    secInfo = moduleData->getSectionInfo(".wums.hooks");
+    if (secInfo && secInfo.value()->getSize() > 0) {
+        size_t entries_count = secInfo.value()->getSize() / sizeof(wums_hook_t);
+        auto *hooks = (wums_hook_t *) secInfo.value()->getAddress();
         if (hooks != nullptr) {
             for (size_t j = 0; j < entries_count; j++) {
                 wums_hook_t *hook = &hooks[j];
                 DEBUG_FUNCTION_LINE("Saving hook of type %08X, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, hook->type, hook->target);
-                HookData hook_data(hook->type, hook->target);
-                moduleData.addHookData(hook_data);
+                auto hookData = std::make_shared<HookData>(hook->type, hook->target);
+                moduleData->addHookData(hookData);
             }
         }
     }
 
-    secInfo = moduleData.getSectionInfo(".wums.meta");
-    if (secInfo && secInfo->getSize() > 0) {
-        auto *entries = (wums_entry_t *) secInfo->getAddress();
+    secInfo = moduleData->getSectionInfo(".wums.meta");
+    if (secInfo && secInfo.value()->getSize() > 0) {
+        auto *entries = (wums_entry_t *) secInfo.value()->getAddress();
         if (entries != nullptr) {
 
-            char *curEntry = (char *) secInfo->getAddress();
-            while ((uint32_t) curEntry < (uint32_t) secInfo->getAddress() + secInfo->getSize()) {
+            char *curEntry = (char *) secInfo.value()->getAddress();
+            while ((uint32_t) curEntry < (uint32_t) secInfo.value()->getAddress() + secInfo.value()->getSize()) {
                 if (*curEntry == '\0') {
                     curEntry++;
                     continue;
@@ -185,20 +185,20 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
 
                     if (key == "export_name") {
                         DEBUG_FUNCTION_LINE("export_name = %s", value.c_str());
-                        moduleData.setExportName(value);
+                        moduleData->setExportName(value);
                     } else if (key == "skipEntrypoint") {
                         if (value == "true") {
                             DEBUG_FUNCTION_LINE("skipEntrypoint = %s", value.c_str());
-                            moduleData.setSkipEntrypoint(true);
+                            moduleData->setSkipEntrypoint(true);
                         } else {
-                            moduleData.setSkipEntrypoint(false);
+                            moduleData->setSkipEntrypoint(false);
                         }
                     } else if (key == "initBeforeRelocationDoneHook") {
                         if (value == "true") {
                             DEBUG_FUNCTION_LINE("initBeforeRelocationDoneHook = %s", value.c_str());
-                            moduleData.setInitBeforeRelocationDoneHook(true);
+                            moduleData->setInitBeforeRelocationDoneHook(true);
                         } else {
-                            moduleData.setInitBeforeRelocationDoneHook(false);
+                            moduleData->setInitBeforeRelocationDoneHook(false);
                         }
                     } else if (key == "wums") {
                         if (value != "0.3") {
@@ -235,15 +235,15 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
                         if (type == STT_FUNC) { // We only care about functions.
                             auto sectionVal = reader.sections[section];
                             auto offsetVal = value - sectionVal->get_address();
-                            auto sectionOpt = moduleData.getSectionInfo(sectionVal->get_name());
+                            auto sectionOpt = moduleData->getSectionInfo(sectionVal->get_name());
                             if (!sectionOpt.has_value()) {
                                 continue;
                             }
-                            auto finalAddress = offsetVal + sectionOpt->getAddress();
+                            auto finalAddress = offsetVal + sectionOpt.value()->getAddress();
 
                             uint32_t stringSize = name.size() + 1;
                             memcpy(strTable + strOffset, name.c_str(), stringSize);
-                            moduleData.addFunctionSymbolData(FunctionSymbolData(strTable + strOffset, (void *) finalAddress, (uint32_t) size));
+                            moduleData->addFunctionSymbolData(std::make_shared<FunctionSymbolData>(strTable + strOffset, (void *) finalAddress, (uint32_t) size));
                             strOffset += stringSize;
                             totalSize += stringSize;
                             endAddress += stringSize;
@@ -260,9 +260,9 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
 
     free(destinations);
 
-    moduleData.setEntrypoint(entrypoint);
-    moduleData.setStartAddress(*destination_address_ptr);
-    moduleData.setEndAddress(endAddress);
+    moduleData->setEntrypoint(entrypoint);
+    moduleData->setStartAddress(*destination_address_ptr);
+    moduleData->setEndAddress(endAddress);
     DEBUG_FUNCTION_LINE("Saved entrypoint as %08X", entrypoint);
     DEBUG_FUNCTION_LINE("Saved startAddress as %08X", *destination_address_ptr);
     DEBUG_FUNCTION_LINE("Saved endAddress as %08X", endAddress);
@@ -272,8 +272,8 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
     return moduleData;
 }
 
-std::vector<RelocationData> ModuleDataFactory::getImportRelocationData(elfio &reader, uint8_t **destinations) {
-    std::vector<RelocationData> result;
+std::vector<std::shared_ptr<RelocationData>> ModuleDataFactory::getImportRelocationData(elfio &reader, uint8_t **destinations) {
+    std::vector<std::shared_ptr<RelocationData>> result;
     std::map<uint32_t, std::string> infoMap;
 
     uint32_t sec_num = reader.sections.size();
@@ -307,7 +307,7 @@ std::vector<RelocationData> ModuleDataFactory::getImportRelocationData(elfio &re
                 if (infoMap.count(sym_section_index) == 0) {
                     continue;
                 }
-                std::optional<ImportRPLInformation> rplInfo = ImportRPLInformation::createImportRPLInformation(infoMap[sym_section_index]);
+                auto rplInfo = ImportRPLInformation::createImportRPLInformation(infoMap[sym_section_index]);
                 if (!rplInfo) {
                     DEBUG_FUNCTION_LINE("Failed to create import information");
                     break;
@@ -316,7 +316,7 @@ std::vector<RelocationData> ModuleDataFactory::getImportRelocationData(elfio &re
                 uint32_t section_index = psec->get_info();
 
                 // When these relocations are performed, we don't need the 0xC0000000 offset anymore.
-                RelocationData relocationData(type, offset - 0x02000000, addend, (void *) (destinations[section_index] + 0x02000000), sym_name, rplInfo.value());
+                auto relocationData = std::make_shared<RelocationData>(type, offset - 0x02000000, addend, (void *) (destinations[section_index] + 0x02000000), sym_name, rplInfo.value());
                 //relocationData->printInformation();
                 result.push_back(relocationData);
             }

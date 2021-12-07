@@ -11,6 +11,7 @@
 #include <whb/log_cafe.h>
 #include <whb/log_module.h>
 #include <vector>
+#include <memory>
 
 #include "fs/DirList.h"
 #include "module/ModuleDataPersistence.h"
@@ -42,11 +43,11 @@ extern "C" uint32_t textStart();
 
 extern "C" void _SYSLaunchMenuWithCheckingAccount(nn::act::SlotNo slot);
 
-bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length) {
+bool doRelocation(std::vector<std::shared_ptr<RelocationData>> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length) {
     for (auto const &curReloc: relocData) {
-        std::string functionName = curReloc.getName();
-        std::string rplName = curReloc.getImportRPLInformation().getName();
-        int32_t isData = curReloc.getImportRPLInformation().isData();
+        std::string functionName = curReloc->getName();
+        std::string rplName = curReloc->getImportRPLInformation()->getName();
+        int32_t isData = curReloc->getImportRPLInformation()->isData();
         OSDynLoad_Module rplHandle = nullptr;
 
         if (OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle) != OS_DYNLOAD_OK) {
@@ -59,7 +60,8 @@ bool doRelocation(std::vector<RelocationData> &relocData, relocation_trampolin_e
         if (functionAddress == 0) {
             return false;
         }
-        if (!ElfUtils::elfLinkOne(curReloc.getType(), curReloc.getOffset(), curReloc.getAddend(), (uint32_t) curReloc.getDestination(), functionAddress, tramp_data, tramp_length, RELOC_TYPE_IMPORT)) {
+        if (!ElfUtils::elfLinkOne(curReloc->getType(), curReloc->getOffset(), curReloc->getAddend(), (uint32_t) curReloc->getDestination(), functionAddress, tramp_data, tramp_length,
+                                  RELOC_TYPE_IMPORT)) {
             DEBUG_FUNCTION_LINE("Relocation failed\n");
             return false;
         }
@@ -87,21 +89,22 @@ int main(int argc, char **argv) {
         uint32_t destination_address = ((uint32_t) gModuleData + (sizeof(module_information_t) + 0x0000FFFF)) & 0xFFFF0000;
         memset((void *) gModuleData, 0, sizeof(module_information_t));
         DEBUG_FUNCTION_LINE("Trying to run %s", setupModules.GetFilepath(i));
-        std::optional<ModuleData> moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), &destination_address, textSectionStart - destination_address, gModuleData->trampolines,
-                                                                       DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+        auto moduleData = ModuleDataFactory::load(setupModules.GetFilepath(i), &destination_address, textSectionStart - destination_address, gModuleData->trampolines,
+                                                  DYN_LINK_TRAMPOLIN_LIST_LENGTH);
         if (!moduleData) {
             DEBUG_FUNCTION_LINE("Failed to load %s", setupModules.GetFilepath(i));
             continue;
         }
         DEBUG_FUNCTION_LINE("Loaded module data");
-        std::vector<RelocationData> relocData = moduleData->getRelocationDataList();
+        auto relocData = moduleData.value()->getRelocationDataList();
         if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH)) {
             DEBUG_FUNCTION_LINE("relocations failed\n");
         }
-        DCFlushRange((void *) moduleData->getStartAddress(), moduleData->getEndAddress() - moduleData->getStartAddress());
-        ICInvalidateRange((void *) moduleData->getStartAddress(), moduleData->getEndAddress() - moduleData->getStartAddress());
-        DEBUG_FUNCTION_LINE("Calling entrypoint @%08X", moduleData->getEntrypoint());
-        ((int (*)(int, char **)) moduleData->getEntrypoint())(argc, argv);
+
+        DCFlushRange((void *) moduleData.value()->getStartAddress(), moduleData.value()->getEndAddress() - moduleData.value()->getStartAddress());
+        ICInvalidateRange((void *) moduleData.value()->getStartAddress(), moduleData.value()->getEndAddress() - moduleData.value()->getStartAddress());
+        DEBUG_FUNCTION_LINE("Calling entrypoint @%08X", moduleData.value()->getEntrypoint());
+        ((int (*)(int, char **)) moduleData.value()->getEntrypoint())(argc, argv);
         DEBUG_FUNCTION_LINE("Back from module");
     }
 
@@ -115,7 +118,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < modules.GetFilecount(); i++) {
         DEBUG_FUNCTION_LINE("Loading module %s", modules.GetFilepath(i));
         auto moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, MEMORY_REGION_USABLE_END - destination_address, gModuleData->trampolines,
-                                                                       DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+                                                  DYN_LINK_TRAMPOLIN_LIST_LENGTH);
 
         if (moduleData) {
             DEBUG_FUNCTION_LINE("Successfully loaded %s", modules.GetFilepath(i));

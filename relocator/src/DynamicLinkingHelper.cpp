@@ -61,17 +61,17 @@ dyn_linking_import_t *DynamicLinkingHelper::getOrAddImport(dyn_linking_relocatio
 }
 
 bool DynamicLinkingHelper::addRelocationEntry(dyn_linking_relocation_data_t *linking_data, dyn_linking_relocation_entry_t *linking_entries, uint32_t linking_entry_length,
-                                              const RelocationData &relocationData) {
-    return addRelocationEntry(linking_data, linking_entries, linking_entry_length, relocationData.getType(),
-                              relocationData.getOffset(), relocationData.getAddend(), relocationData.getDestination(),
-                              relocationData.getName(),
-                              relocationData.getImportRPLInformation());
+                                              const std::shared_ptr<RelocationData> &relocationData) {
+    return addRelocationEntry(linking_data, linking_entries, linking_entry_length, relocationData->getType(),
+                              relocationData->getOffset(), relocationData->getAddend(), relocationData->getDestination(),
+                              relocationData->getName(),
+                              relocationData->getImportRPLInformation());
 }
 
 bool DynamicLinkingHelper::addRelocationEntry(dyn_linking_relocation_data_t *linking_data, dyn_linking_relocation_entry_t *linking_entries, uint32_t linking_entry_length, char type, size_t offset,
                                               int32_t addend, void *destination,
-                                              const std::string &name, const ImportRPLInformation &rplInfo) {
-    dyn_linking_import_t *importInfoGbl = DynamicLinkingHelper::getOrAddImport(linking_data, rplInfo.getName().c_str(), rplInfo.isData());
+                                              const std::string &name, const std::shared_ptr<ImportRPLInformation> &rplInfo) {
+    dyn_linking_import_t *importInfoGbl = DynamicLinkingHelper::getOrAddImport(linking_data, rplInfo->getName().c_str(), rplInfo->isData());
     if (importInfoGbl == nullptr) {
         DEBUG_FUNCTION_LINE("Getting import info failed. Probably maximum of %d rpl files to import reached.\n", DYN_LINK_IMPORT_LIST_LENGTH);
         return false;

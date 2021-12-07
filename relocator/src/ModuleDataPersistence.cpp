@@ -3,8 +3,8 @@
 #include <coreinit/cache.h>
 #include <wums.h>
 
-std::vector<ModuleDataMinimal> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
-    std::vector<ModuleDataMinimal> result;
+std::vector<std::shared_ptr<ModuleDataMinimal>> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
+    std::vector<std::shared_ptr<ModuleDataMinimal>> result;
     if (moduleInformation == nullptr) {
         DEBUG_FUNCTION_LINE("moduleInformation == NULL\n");
         return result;
@@ -22,17 +22,17 @@ std::vector<ModuleDataMinimal> ModuleDataPersistence::loadModuleData(module_info
     for (int32_t i = 0; i < module_count; i++) {
         // Copy data from struct.
         module_information_single_t *module_data = &(moduleInformation->module_data[i]);
-        ModuleDataMinimal moduleData;
+        auto moduleData = std::make_shared<ModuleDataMinimal>();
 
-        moduleData.setEntrypoint(module_data->entrypoint);
-        moduleData.setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
-        moduleData.setExportName(module_data->module_export_name);
+        moduleData->setEntrypoint(module_data->entrypoint);
+        moduleData->setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
+        moduleData->setExportName(module_data->module_export_name);
 
         for (auto &hook_entry: module_data->hook_entries) {
             if (hook_entry.target == 0) {
                 continue;
             }
-            moduleData.addHookData(HookData(static_cast<wums_hook_type_t>(hook_entry.type), reinterpret_cast<const void *>(hook_entry.target)));
+            moduleData->addHookData(std::make_shared<HookData>(static_cast<wums_hook_type_t>(hook_entry.type), reinterpret_cast<const void *>(hook_entry.target)));
         }
 
         for (auto &linking_entry: module_data->linking_entries) {
@@ -58,10 +58,10 @@ std::vector<ModuleDataMinimal> ModuleDataPersistence::loadModuleData(module_info
                 DEBUG_FUNCTION_LINE("functionEntry->functionName was NULL, skipping relocation entry\n");
                 continue;
             }
-            ImportRPLInformation rplInfo(importEntry->importName, importEntry->isData);
-            RelocationData reloc(linking_entry.type, linking_entry.offset, linking_entry.addend, linking_entry.destination, functionEntry->functionName, rplInfo);
+            auto rplInfo = std::make_shared<ImportRPLInformation>(importEntry->importName, importEntry->isData);
+            auto reloc = std::make_shared<RelocationData>(linking_entry.type, linking_entry.offset, linking_entry.addend, linking_entry.destination, functionEntry->functionName, rplInfo);
 
-            moduleData.addRelocationData(reloc);
+            moduleData->addRelocationData(reloc);
         }
 
         result.push_back(moduleData);

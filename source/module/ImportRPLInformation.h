@@ -19,19 +19,20 @@
 
 #include <string>
 #include <optional>
+#include <utility>
 #include "utils/logger.h"
 
 class ImportRPLInformation {
 
 public:
     explicit ImportRPLInformation(std::string name, bool isData = false) {
-        this->name = name;
+        this->name = std::move(name);
         this->_isData = isData;
     }
 
     ~ImportRPLInformation() = default;
 
-    static std::optional<ImportRPLInformation> createImportRPLInformation(std::string rawSectionName) {
+    static std::optional<std::shared_ptr<ImportRPLInformation>> createImportRPLInformation(std::string rawSectionName) {
         std::string fimport = ".fimport_";
         std::string dimport = ".dimport_";
 
@@ -50,7 +51,7 @@ public:
             DEBUG_FUNCTION_LINE("invalid section name\n");
             return std::nullopt;
         }
-        return ImportRPLInformation(rplName, data);
+        return std::make_shared<ImportRPLInformation>(rplName, data);
     }
 
     [[nodiscard]] std::string getName() const {

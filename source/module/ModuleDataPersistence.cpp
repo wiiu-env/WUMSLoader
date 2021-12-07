@@ -1,9 +1,8 @@
 #include <coreinit/cache.h>
-
 #include "ModuleDataPersistence.h"
 #include "DynamicLinkingHelper.h"
 
-bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformation, const ModuleData &module) {
+bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformation, const std::shared_ptr<ModuleData> &module) {
     int32_t module_count = moduleInformation->number_used_modules;
 
     if (module_count >= MAXIMUM_MODULES) {
@@ -13,9 +12,9 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     // Copy data to global struct.
     module_information_single_t *module_data = &(moduleInformation->module_data[module_count]);
 
-    DEBUG_FUNCTION_LINE("Saving relocation data for module at %08X", module.getEntrypoint());
+    DEBUG_FUNCTION_LINE("Saving relocation data for module at %08X", module->getEntrypoint());
     // Relocation
-    std::vector<RelocationData> relocationData = module.getRelocationDataList();
+    auto relocationData = module->getRelocationDataList();
     for (auto const &reloc: relocationData) {
         if (!DynamicLinkingHelper::addRelocationEntry(&(moduleInformation->linking_data), module_data->linking_entries,
                                                       DYN_LINK_RELOCATION_LIST_LENGTH, reloc)) {
@@ -24,15 +23,15 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
         }
     }
 
-    std::vector<ExportData> exportData = module.getExportDataList();
+    auto exportData = module->getExportDataList();
     for (auto const &curExport: exportData) {
         bool found = false;
         for (auto &export_entry: module_data->export_entries) {
             if (export_entry.address == 0) {
-                export_entry.type = curExport.getType();
+                export_entry.type = curExport->getType();
                 export_entry.name[0] = '\0';
-                strncat(export_entry.name, curExport.getName().c_str(), sizeof(export_entry.name) - 1);
-                export_entry.address = (uint32_t) curExport.getAddress();
+                strncat(export_entry.name, curExport->getName().c_str(), sizeof(export_entry.name) - 1);
+                export_entry.address = (uint32_t) curExport->getAddress();
                 found = true;
                 break;
             }
@@ -43,13 +42,13 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
         }
     }
 
-    std::vector<HookData> hookData = module.getHookDataList();
+    auto hookData = module->getHookDataList();
     for (auto const &curHook: hookData) {
         bool found = false;
         for (auto &hook_entry: module_data->hook_entries) {
             if (hook_entry.target == 0) {
-                hook_entry.type = curHook.getType();
-                hook_entry.target = (uint32_t) curHook.getTarget();
+                hook_entry.type = curHook->getType();
+                hook_entry.target = (uint32_t) curHook->getTarget();
                 found = true;
                 break;
             }
@@ -60,22 +59,22 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
         }
     }
 
-    strncpy(module_data->module_export_name, module.getExportName().c_str(), MAXIMUM_EXPORT_MODULE_NAME_LENGTH);
+    strncpy(module_data->module_export_name, module->getExportName().c_str(), MAXIMUM_EXPORT_MODULE_NAME_LENGTH);
 
-    uint32_t entryCount = module.getFunctionSymbolDataList().size();
+    uint32_t entryCount = module->getFunctionSymbolDataList().size();
     if (entryCount > 0) {
         auto ptr = &moduleInformation->function_symbols[moduleInformation->number_used_function_symbols];
         module_data->function_symbol_entries = ptr;
 
         uint32_t sym_offset = 0;
-        for (auto &curFuncSym: module.getFunctionSymbolDataList()) {
+        for (auto &curFuncSym: module->getFunctionSymbolDataList()) {
             if (moduleInformation->number_used_function_symbols >= FUNCTION_SYMBOL_LIST_LENGTH) {
                 DEBUG_FUNCTION_LINE("Function symbol list is full");
                 break;
             }
-            module_data->function_symbol_entries[sym_offset].address = curFuncSym.getAddress();
-            module_data->function_symbol_entries[sym_offset].name = (char *) curFuncSym.getName();
-            module_data->function_symbol_entries[sym_offset].size = curFuncSym.getSize();
+            module_data->function_symbol_entries[sym_offset].address = curFuncSym->getAddress();
+            module_data->function_symbol_entries[sym_offset].name = (char *) curFuncSym->getName();
+            module_data->function_symbol_entries[sym_offset].size = curFuncSym->getSize();
 
             sym_offset++;
             moduleInformation->number_used_function_symbols++;
@@ -86,15 +85,15 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
         module_data->number_used_function_symbols = 0;
     }
 
-    module_data->bssAddr = module.getBSSAddr();
-    module_data->bssSize = module.getBSSSize();
-    module_data->sbssAddr = module.getSBSSAddr();
-    module_data->sbssSize = module.getSBSSSize();
-    module_data->startAddress = module.getStartAddress();
-    module_data->endAddress = module.getEndAddress();
-    module_data->entrypoint = module.getEntrypoint();
-    module_data->skipEntrypoint = module.isSkipEntrypoint();
-    module_data->initBeforeRelocationDoneHook = module.isInitBeforeRelocationDoneHook();
+    module_data->bssAddr = module->getBSSAddr();
+    module_data->bssSize = module->getBSSSize();
+    module_data->sbssAddr = module->getSBSSAddr();
+    module_data->sbssSize = module->getSBSSSize();
+    module_data->startAddress = module->getStartAddress();
+    module_data->endAddress = module->getEndAddress();
+    module_data->entrypoint = module->getEntrypoint();
+    module_data->skipEntrypoint = module->isSkipEntrypoint();
+    module_data->initBeforeRelocationDoneHook = module->isInitBeforeRelocationDoneHook();
 
     moduleInformation->number_used_modules++;
 
@@ -104,8 +103,8 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     return true;
 }
 
-std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
-    std::vector<ModuleData> result;
+std::vector<std::shared_ptr<ModuleData>> ModuleDataPersistence::loadModuleData(module_information_t *moduleInformation) {
+    std::vector<std::shared_ptr<ModuleData>> result;
     if (moduleInformation == nullptr) {
         DEBUG_FUNCTION_LINE("moduleInformation == NULL\n");
         return result;
@@ -121,29 +120,31 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
     for (int32_t i = 0; i < module_count; i++) {
         // Copy data from struct.
         module_information_single_t *module_data = &(moduleInformation->module_data[i]);
-        ModuleData moduleData;
-        moduleData.setBSSLocation(module_data->bssAddr, module_data->bssSize);
-        moduleData.setSBSSLocation(module_data->sbssAddr, module_data->sbssSize);
-        moduleData.setEntrypoint(module_data->entrypoint);
-        moduleData.setStartAddress(module_data->startAddress);
-        moduleData.setEndAddress(module_data->endAddress);
-        moduleData.setExportName(module_data->module_export_name);
-        moduleData.setSkipEntrypoint(module_data->skipEntrypoint);
-        moduleData.setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
+        auto moduleData = std::make_shared<ModuleData>();
+        moduleData->setBSSLocation(module_data->bssAddr, module_data->bssSize);
+        moduleData->setSBSSLocation(module_data->sbssAddr, module_data->sbssSize);
+        moduleData->setEntrypoint(module_data->entrypoint);
+        moduleData->setStartAddress(module_data->startAddress);
+        moduleData->setEndAddress(module_data->endAddress);
+        moduleData->setExportName(module_data->module_export_name);
+        moduleData->setSkipEntrypoint(module_data->skipEntrypoint);
+        moduleData->setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
 
         for (auto &export_entrie: module_data->export_entries) {
             export_data_t *export_entry = &export_entrie;
             if (export_entry->address == 0) {
                 continue;
             }
-            moduleData.addExportData(ExportData(static_cast<wums_entry_type_t>(export_entry->type), export_entry->name, reinterpret_cast<const void *>(export_entry->address)));
+            auto exportData = std::make_shared<ExportData>(static_cast<wums_entry_type_t>(export_entry->type), export_entry->name, reinterpret_cast<const void *>(export_entry->address));
+            moduleData->addExportData(exportData);
         }
 
         for (auto &hook_entry: module_data->hook_entries) {
             if (hook_entry.target == 0) {
                 continue;
             }
-            moduleData.addHookData(HookData(static_cast<wums_hook_type_t>(hook_entry.type), reinterpret_cast<const void *>(hook_entry.target)));
+            auto hookData = std::make_shared<HookData>(static_cast<wums_hook_type_t>(hook_entry.type), reinterpret_cast<const void *>(hook_entry.target));
+            moduleData->addHookData(hookData);
         }
 
         for (auto &linking_entry: module_data->linking_entries) {
@@ -161,16 +162,17 @@ std::vector<ModuleData> ModuleDataPersistence::loadModuleData(module_information
                 DEBUG_FUNCTION_LINE("functionEntry was NULL, skipping relocation entry\n");
                 continue;
             }
-            ImportRPLInformation rplInfo(importEntry->importName, importEntry->isData);
-            RelocationData reloc(linking_entry.type, linking_entry.offset, linking_entry.addend, linking_entry.destination, functionEntry->functionName, rplInfo);
+            auto rplInfo = std::make_shared<ImportRPLInformation>(importEntry->importName, importEntry->isData);
+            auto reloc = std::make_shared<RelocationData>(linking_entry.type, linking_entry.offset, linking_entry.addend, linking_entry.destination, functionEntry->functionName, rplInfo);
 
-            moduleData.addRelocationData(reloc);
+            moduleData->addRelocationData(reloc);
         }
 
         if (module_data->function_symbol_entries != nullptr && module_data->number_used_function_symbols > 0) {
             for (uint32_t j = 0; j < module_data->number_used_function_symbols; j++) {
                 auto symbol = &module_data->function_symbol_entries[j];
-                moduleData.addFunctionSymbolData(FunctionSymbolData(symbol->name, symbol->address, symbol->size));
+                auto functionSymbolData = std::make_shared<FunctionSymbolData>(symbol->name, symbol->address, symbol->size);
+                moduleData->addFunctionSymbolData(functionSymbolData);
             }
         }
         result.push_back(moduleData);

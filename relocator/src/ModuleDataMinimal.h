@@ -34,19 +34,19 @@ public:
         return this->export_name;
     }
 
-    void addRelocationData(const RelocationData &relocation_data) {
+    void addRelocationData(const std::shared_ptr<RelocationData> &relocation_data) {
         relocation_data_list.push_back(relocation_data);
     }
 
-    [[nodiscard]] const std::vector<RelocationData> &getRelocationDataList() const {
+    [[nodiscard]] const std::vector<std::shared_ptr<RelocationData>> &getRelocationDataList() const {
         return relocation_data_list;
     }
 
-    void addHookData(const HookData &data) {
+    void addHookData(const std::shared_ptr<HookData> &data) {
         hook_data_list.push_back(data);
     }
 
-    [[nodiscard]] const std::vector<HookData> &getHookDataList() const {
+    [[nodiscard]] const std::vector<std::shared_ptr<HookData>> &getHookDataList() const {
         return hook_data_list;
     }
 
@@ -68,10 +68,9 @@ public:
 
     bool relocationsDone = false;
 private:
-    std::vector<RelocationData> relocation_data_list;
-    std::vector<HookData> hook_data_list;
+    std::vector<std::shared_ptr<RelocationData>> relocation_data_list;
+    std::vector<std::shared_ptr<HookData>> hook_data_list;
     std::string export_name;
     uint32_t entrypoint = 0;
     bool initBeforeRelocationDoneHook = false;
-
 };

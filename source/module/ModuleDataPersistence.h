@@ -5,7 +5,7 @@
 
 class ModuleDataPersistence {
 public:
-    static bool saveModuleData(module_information_t *moduleInformation, const ModuleData &module);
+    static bool saveModuleData(module_information_t *moduleInformation, const std::shared_ptr<ModuleData> &module);
 
-    static std::vector<ModuleData> loadModuleData(module_information_t *moduleInformation);
+    static std::vector<std::shared_ptr<ModuleData>> loadModuleData(module_information_t *moduleInformation);
 };

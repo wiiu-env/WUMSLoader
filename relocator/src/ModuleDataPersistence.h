@@ -6,5 +6,5 @@
 
 class ModuleDataPersistence {
 public:
-    static std::vector<ModuleDataMinimal> loadModuleData(module_information_t *moduleInformation);
+    static std::vector<std::shared_ptr<ModuleDataMinimal>> loadModuleData(module_information_t *moduleInformation);
 };
