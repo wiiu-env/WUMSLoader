@@ -21,10 +21,22 @@ static const char **hook_names = (const char *[]) {
         "WUMS_HOOK_APPLICATION_REQUESTS_EXIT"
 };
 
+void CallHook(const std::vector<std::shared_ptr<ModuleDataMinimal>> &modules, wums_hook_type_t type, bool condition) {
+    if (condition) {
+        CallHook(modules, type);
+    }
+}
+
 void CallHook(const std::vector<std::shared_ptr<ModuleDataMinimal>> &modules, wums_hook_type_t type) {
     DEBUG_FUNCTION_LINE_VERBOSE("Calling hook of type %s [%d] for all modules\n", hook_names[type], type);
     for (auto &curModule: modules) {
         CallHook(curModule, type);
+    }
+}
+
+void CallHook(const std::shared_ptr<ModuleDataMinimal> &module, wums_hook_type_t type, bool condition) {
+    if (condition) {
+        CallHook(module, type);
     }
 }
 

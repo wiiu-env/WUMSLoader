@@ -23,6 +23,8 @@ extern "C" void socket_lib_init();
 
 std::vector<std::shared_ptr<ModuleDataMinimal>> OrderModulesByDependencies(const std::vector<std::shared_ptr<ModuleDataMinimal>> &loadedModules);
 
+void CallInitHooksForModule(const std::shared_ptr<ModuleDataMinimal> &curModule);
+
 extern "C" void doStart(int argc, char **argv);
 // We need to wrap it to make sure the main function is called AFTER our code.
 // The compiler tries to optimize this otherwise and calling the main function earlier
@@ -175,17 +177,7 @@ extern "C" void doStart(int argc, char **argv) {
 
         for (auto &curModule: loadedModules) {
             if (curModule->isInitBeforeRelocationDoneHook()) {
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_MALLOC);
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_NEWLIB);
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_STDCPP);
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_DEVOPTAB);
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_SOCKETS);
-                CallHook(curModule, WUMS_HOOK_INIT);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_SOCKETS);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_DEVOPTAB);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_STDCPP);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_NEWLIB);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_MALLOC);
+                CallInitHooksForModule(curModule);
             }
         }
 
@@ -202,17 +194,7 @@ extern "C" void doStart(int argc, char **argv) {
 
         for (auto &curModule: loadedModules) {
             if (!curModule->isInitBeforeRelocationDoneHook()) {
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_MALLOC);
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_NEWLIB);
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_STDCPP);
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_DEVOPTAB);
-                CallHook(curModule, WUMS_HOOK_INIT_WUT_SOCKETS);
-                CallHook(curModule, WUMS_HOOK_INIT);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_SOCKETS);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_DEVOPTAB);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_STDCPP);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_NEWLIB);
-                CallHook(curModule, WUMS_HOOK_FINI_WUT_MALLOC);
+                CallInitHooksForModule(curModule);
             }
         }
     } else {
@@ -228,6 +210,20 @@ extern "C" void doStart(int argc, char **argv) {
     CallHook(loadedModules, WUMS_HOOK_INIT_WUT_SOCKETS);
     CallHook(loadedModules, WUMS_HOOK_APPLICATION_STARTS);
     //CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
+}
+
+void CallInitHooksForModule(const std::shared_ptr<ModuleDataMinimal> &curModule) {
+    CallHook(curModule, WUMS_HOOK_INIT_WUT_MALLOC);
+    CallHook(curModule, WUMS_HOOK_INIT_WUT_NEWLIB);
+    CallHook(curModule, WUMS_HOOK_INIT_WUT_STDCPP);
+    CallHook(curModule, WUMS_HOOK_INIT_WUT_DEVOPTAB);
+    CallHook(curModule, WUMS_HOOK_INIT_WUT_SOCKETS);
+    CallHook(curModule, WUMS_HOOK_INIT);
+    CallHook(curModule, WUMS_HOOK_FINI_WUT_SOCKETS);
+    CallHook(curModule, WUMS_HOOK_FINI_WUT_DEVOPTAB);
+    CallHook(curModule, WUMS_HOOK_FINI_WUT_STDCPP);
+    CallHook(curModule, WUMS_HOOK_FINI_WUT_NEWLIB);
+    CallHook(curModule, WUMS_HOOK_FINI_WUT_MALLOC);
 }
 
 std::vector<std::shared_ptr<ModuleDataMinimal>> OrderModulesByDependencies(const std::vector<std::shared_ptr<ModuleDataMinimal>> &loadedModules) {
