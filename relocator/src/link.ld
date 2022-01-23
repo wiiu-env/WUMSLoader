@@ -3,7 +3,7 @@ OUTPUT(loader.elf);
 ENTRY(_start);
 
 SECTIONS {
-	. = 0x00800000;
+	. = 0x00809000;
 	.text : {
 		*(.kernel_code*);
 		*(.text*);
@@ -30,4 +30,4 @@ SECTIONS {
 	}
 }
 
-ASSERT((SIZEOF(.text) + SIZEOF(.data) + SIZEOF(.sdata) + SIZEOF(.rodata) + SIZEOF(.sbss) + SIZEOF(.bss)) < 0x80000, "Memory overlapping with modules.");
+ASSERT((SIZEOF(.text) + SIZEOF(.data) + SIZEOF(.sdata) + SIZEOF(.rodata) + SIZEOF(.sbss) + SIZEOF(.bss)) < 0x77000, "Memory overlapping with modules.");
