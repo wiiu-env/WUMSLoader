@@ -15,6 +15,7 @@
 #include "globals.h"
 
 extern "C" uint32_t textStart();
+extern "C" void __fini();
 
 int main(int argc, char **argv) {
     if (!WHBLogModuleInit()) {
@@ -63,5 +64,7 @@ int main(int argc, char **argv) {
     } else { //show mii select
         _SYSLaunchMenuWithCheckingAccount(slot);
     }
+
+    __fini();
     return 0;
 }
