@@ -184,14 +184,6 @@ extern "C" void doStart(int argc, char **argv) {
         DEBUG_FUNCTION_LINE_VERBOSE("Relocations done\n");
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
 
-        for (int i = 0; i < gModuleData->number_used_modules; i++) {
-            if (!gModuleData->module_data[i].skipEntrypoint) {
-                DEBUG_FUNCTION_LINE_VERBOSE("About to call %08X\n", gModuleData->module_data[i].entrypoint);
-                int ret = ((int (*)(int, char **)) (gModuleData->module_data[i].entrypoint))(argc, argv);
-                DEBUG_FUNCTION_LINE_VERBOSE("return code was %d\n", ret);
-            }
-        }
-
         for (auto &curModule: loadedModules) {
             if (!curModule->isInitBeforeRelocationDoneHook()) {
                 CallInitHooksForModule(curModule);
@@ -208,8 +200,10 @@ extern "C" void doStart(int argc, char **argv) {
     CallHook(loadedModules, WUMS_HOOK_INIT_WUT_STDCPP);
     CallHook(loadedModules, WUMS_HOOK_INIT_WUT_DEVOPTAB);
     CallHook(loadedModules, WUMS_HOOK_INIT_WUT_SOCKETS);
+    for (auto &curModule: loadedModules) {
+        CallHook(curModule, WUMS_HOOK_INIT_WRAPPER, !curModule->isSkipInitFini());
+    }
     CallHook(loadedModules, WUMS_HOOK_APPLICATION_STARTS);
-    //CallHook(loadedModules, WUMS_HOOK_FINI_WUT);
 }
 
 void CallInitHooksForModule(const std::shared_ptr<ModuleDataMinimal> &curModule) {
@@ -218,7 +212,9 @@ void CallInitHooksForModule(const std::shared_ptr<ModuleDataMinimal> &curModule)
     CallHook(curModule, WUMS_HOOK_INIT_WUT_STDCPP);
     CallHook(curModule, WUMS_HOOK_INIT_WUT_DEVOPTAB);
     CallHook(curModule, WUMS_HOOK_INIT_WUT_SOCKETS);
+    CallHook(curModule, WUMS_HOOK_INIT_WRAPPER, !curModule->isSkipInitFini());
     CallHook(curModule, WUMS_HOOK_INIT);
+    CallHook(curModule, WUMS_HOOK_FINI_WRAPPER, !curModule->isSkipInitFini());
     CallHook(curModule, WUMS_HOOK_FINI_WUT_SOCKETS);
     CallHook(curModule, WUMS_HOOK_FINI_WUT_DEVOPTAB);
     CallHook(curModule, WUMS_HOOK_FINI_WUT_STDCPP);

@@ -186,12 +186,12 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
                     if (key == "export_name") {
                         DEBUG_FUNCTION_LINE("export_name = %s", value.c_str());
                         moduleData->setExportName(value);
-                    } else if (key == "skipEntrypoint") {
+                    } else if (key == "skipInitFini") {
                         if (value == "true") {
-                            DEBUG_FUNCTION_LINE("skipEntrypoint = %s", value.c_str());
-                            moduleData->setSkipEntrypoint(true);
+                            DEBUG_FUNCTION_LINE("skipInitFini = %s", value.c_str());
+                            moduleData->setSkipInitFini(true);
                         } else {
-                            moduleData->setSkipEntrypoint(false);
+                            moduleData->setSkipInitFini(false);
                         }
                     } else if (key == "initBeforeRelocationDoneHook") {
                         if (value == "true") {

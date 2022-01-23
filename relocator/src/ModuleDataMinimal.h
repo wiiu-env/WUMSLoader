@@ -66,6 +66,14 @@ public:
         this->initBeforeRelocationDoneHook = value;
     }
 
+    [[nodiscard]] bool isSkipInitFini() const {
+        return this->skipInitFini;
+    }
+
+    void setSkipInitFini(bool value) {
+        this->skipInitFini = value;
+    }
+
     bool relocationsDone = false;
 private:
     std::vector<std::shared_ptr<RelocationData>> relocation_data_list;
@@ -73,4 +81,5 @@ private:
     std::string export_name;
     uint32_t entrypoint = 0;
     bool initBeforeRelocationDoneHook = false;
+    bool skipInitFini = false;
 };

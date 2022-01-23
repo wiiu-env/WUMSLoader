@@ -26,6 +26,7 @@ std::vector<std::shared_ptr<ModuleDataMinimal>> ModuleDataPersistence::loadModul
 
         moduleData->setEntrypoint(module_data->entrypoint);
         moduleData->setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
+        moduleData->setSkipInitFini(module_data->skipInitFini);
         moduleData->setExportName(module_data->module_export_name);
 
         for (auto &hook_entry: module_data->hook_entries) {

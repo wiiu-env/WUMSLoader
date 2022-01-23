@@ -14,6 +14,9 @@ static const char **hook_names = (const char *[]) {
         "WUMS_HOOK_INIT_WUT_SOCKETS",
         "WUMS_HOOK_FINI_WUT_SOCKETS",
 
+        "WUMS_HOOK_INIT_WRAPPER",
+        "WUMS_HOOK_FINI_WRAPPER",
+
         "WUMS_HOOK_INIT",
         "WUMS_HOOK_APPLICATION_STARTS",
         "WUMS_HOOK_APPLICATION_ENDS",
@@ -65,7 +68,9 @@ void CallHook(const std::shared_ptr<ModuleDataMinimal> &module, wums_hook_type_t
                  type == WUMS_HOOK_INIT_WUT_DEVOPTAB ||
                  type == WUMS_HOOK_FINI_WUT_DEVOPTAB ||
                  type == WUMS_HOOK_INIT_WUT_SOCKETS ||
-                 type == WUMS_HOOK_FINI_WUT_SOCKETS
+                 type == WUMS_HOOK_FINI_WUT_SOCKETS ||
+                 type == WUMS_HOOK_INIT_WRAPPER ||
+                 type == WUMS_HOOK_FINI_WRAPPER
             )) {
                 DEBUG_FUNCTION_LINE_VERBOSE("Calling hook of type %s [%d] %d for %s: %08X\n", hook_names[type], type, curHook->getType(), module->getExportName().c_str(), curHook->getTarget());
                 ((void (*)()) ((uint32_t *) func_ptr))();

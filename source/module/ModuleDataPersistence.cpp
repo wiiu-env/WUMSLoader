@@ -92,7 +92,7 @@ bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformati
     module_data->startAddress = module->getStartAddress();
     module_data->endAddress = module->getEndAddress();
     module_data->entrypoint = module->getEntrypoint();
-    module_data->skipEntrypoint = module->isSkipEntrypoint();
+    module_data->skipInitFini = module->isSkipInitFini();
     module_data->initBeforeRelocationDoneHook = module->isInitBeforeRelocationDoneHook();
 
     moduleInformation->number_used_modules++;
@@ -127,7 +127,7 @@ std::vector<std::shared_ptr<ModuleData>> ModuleDataPersistence::loadModuleData(m
         moduleData->setStartAddress(module_data->startAddress);
         moduleData->setEndAddress(module_data->endAddress);
         moduleData->setExportName(module_data->module_export_name);
-        moduleData->setSkipEntrypoint(module_data->skipEntrypoint);
+        moduleData->setSkipInitFini(module_data->skipInitFini);
         moduleData->setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
 
         for (auto &export_entrie: module_data->export_entries) {

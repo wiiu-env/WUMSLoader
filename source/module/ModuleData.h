@@ -148,20 +148,20 @@ public:
         return this->export_name;
     }
 
-    [[nodiscard]] bool isSkipEntrypoint() const {
-        return this->skipEntrypoint;
-    }
-
     [[nodiscard]] bool isInitBeforeRelocationDoneHook() const {
         return this->initBeforeRelocationDoneHook;
     }
 
-    void setSkipEntrypoint(bool value) {
-        this->skipEntrypoint = value;
-    }
-
     void setInitBeforeRelocationDoneHook(bool value) {
         this->initBeforeRelocationDoneHook = value;
+    }
+
+    [[nodiscard]] bool isSkipInitFini() const {
+        return this->skipInitFini;
+    }
+
+    void setSkipInitFini(bool value) {
+        this->skipInitFini = value;
     }
 
     bool relocationsDone = false;
@@ -181,6 +181,6 @@ private:
     uint32_t startAddress = 0;
     uint32_t endAddress = 0;
     uint32_t entrypoint = 0;
-    bool skipEntrypoint = false;
     bool initBeforeRelocationDoneHook = false;
+    bool skipInitFini = false;
 };
