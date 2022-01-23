@@ -181,7 +181,7 @@ extern "C" void doStart(int argc, char **argv) {
             }
         }
 
-        DEBUG_FUNCTION_LINE_VERBOSE("Relocations done\n");
+        DEBUG_FUNCTION_LINE_VERBOSE("Call Relocations done hook\n");
         CallHook(loadedModules, WUMS_HOOK_RELOCATIONS_DONE);
 
         for (auto &curModule: loadedModules) {

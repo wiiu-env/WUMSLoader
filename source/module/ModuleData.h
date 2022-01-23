@@ -28,9 +28,8 @@
 #include "FunctionSymbolData.h"
 
 struct FunctionSymbolDataComparator {
-    bool operator()(const std::shared_ptr<FunctionSymbolData>& lhs,
-                    const std::shared_ptr<FunctionSymbolData>& rhs) const
-    {
+    bool operator()(const std::shared_ptr<FunctionSymbolData> &lhs,
+                    const std::shared_ptr<FunctionSymbolData> &rhs) const {
         return (uint32_t) lhs->getAddress() < (uint32_t) rhs->getAddress();
     }
 };

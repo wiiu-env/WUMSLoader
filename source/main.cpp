@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    DEBUG_FUNCTION_LINE("Setup relocator");
     SetupRelocator();
 
     nn::act::Initialize();
