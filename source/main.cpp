@@ -3,9 +3,6 @@
 #include <elfio/elfio.hpp>
 #include <sysapp/launch.h>
 #include <nn/act/client_cpp.h>
-#include <whb/log_udp.h>
-#include <whb/log_cafe.h>
-#include <whb/log_module.h>
 
 #include "fs/DirList.h"
 #include "module/ModuleDataPersistence.h"
@@ -18,10 +15,7 @@ extern "C" uint32_t textStart();
 extern "C" void __fini();
 
 int main(int argc, char **argv) {
-    if (!WHBLogModuleInit()) {
-        WHBLogCafeInit();
-        WHBLogUdpInit();
-    }
+    initLogging();
 
     // We subtract 0x100 to be safe.
     uint32_t textSectionStart = textStart() - 0x100;
@@ -52,8 +46,6 @@ int main(int argc, char **argv) {
 
     SetupRelocator();
 
-    WHBLogUdpDeinit();
-
     nn::act::Initialize();
     nn::act::SlotNo slot = nn::act::GetSlotNo();
     nn::act::SlotNo defaultSlot = nn::act::GetDefaultAccount();
@@ -64,6 +56,8 @@ int main(int argc, char **argv) {
     } else { //show mii select
         _SYSLaunchMenuWithCheckingAccount(slot);
     }
+
+    deinitLogging();
 
     __fini();
     return 0;

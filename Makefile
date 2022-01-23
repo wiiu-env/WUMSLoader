@@ -31,7 +31,7 @@ INCLUDES	:=	source
 #-------------------------------------------------------------------------------
 # options for code generation
 #-------------------------------------------------------------------------------
-CFLAGS	:=	-g -Wall -O3 -ffunction-sections -fno-exceptions -fno-rtti\
+CFLAGS	:=	-Wall -O2 -ffunction-sections -fno-exceptions -fno-rtti\
 			$(MACHDEP)
 
 CFLAGS	+=	$(INCLUDE) -D__WIIU__ -D__WUT__
@@ -40,6 +40,11 @@ CXXFLAGS	:= $(CFLAGS) -std=c++20
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) --entry=_start -Wl,-Map,$(notdir $*.map)
+
+ifeq ($(DEBUG),1)
+CXXFLAGS += -DDEBUG -g
+CCFLAGS += -DDEBUG -g
+endif
 
 LIBS	:= -lwut -lz
 
