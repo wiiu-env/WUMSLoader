@@ -28,7 +28,7 @@
 using namespace ELFIO;
 
 std::optional<std::shared_ptr<ModuleData>>
-ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_ptr, uint32_t maximum_size, relocation_trampolin_entry_t *trampolin_data, uint32_t trampolin_data_length) {
+ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_ptr, uint32_t maximum_size, relocation_trampoline_entry_t *trampoline_data, uint32_t trampoline_data_length) {
     elfio reader;
     std::shared_ptr<ModuleData> moduleData = std::make_shared<ModuleData>();
 
@@ -124,7 +124,7 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
         section *psec = reader.sections[i];
         if ((psec->get_type() == SHT_PROGBITS || psec->get_type() == SHT_NOBITS) && (psec->get_flags() & SHF_ALLOC)) {
             DEBUG_FUNCTION_LINE("Linking (%d)... %s", i, psec->get_name().c_str());
-            if (!linkSection(reader, psec->get_index(), (uint32_t) destinations[psec->get_index()], offset_text, offset_data, trampolin_data, trampolin_data_length)) {
+            if (!linkSection(reader, psec->get_index(), (uint32_t) destinations[psec->get_index()], offset_text, offset_data, trampoline_data, trampoline_data_length)) {
                 DEBUG_FUNCTION_LINE("elfLink failed");
                 free(destinations);
                 return std::nullopt;
@@ -325,8 +325,8 @@ std::vector<std::shared_ptr<RelocationData>> ModuleDataFactory::getImportRelocat
     return result;
 }
 
-bool ModuleDataFactory::linkSection(elfio &reader, uint32_t section_index, uint32_t destination, uint32_t base_text, uint32_t base_data, relocation_trampolin_entry_t *trampolin_data,
-                                    uint32_t trampolin_data_length) {
+bool ModuleDataFactory::linkSection(elfio &reader, uint32_t section_index, uint32_t destination, uint32_t base_text, uint32_t base_data, relocation_trampoline_entry_t *trampoline_data,
+                                    uint32_t trampoline_data_length) {
     uint32_t sec_num = reader.sections.size();
 
     for (uint32_t i = 0; i < sec_num; ++i) {
@@ -371,7 +371,7 @@ bool ModuleDataFactory::linkSection(elfio &reader, uint32_t section_index, uint3
                     return false;
                 }
 
-                if (!ElfUtils::elfLinkOne(type, offset, addend, destination, adjusted_sym_value, trampolin_data, trampolin_data_length, RELOC_TYPE_FIXED)) {
+                if (!ElfUtils::elfLinkOne(type, offset, addend, destination, adjusted_sym_value, trampoline_data, trampoline_data_length, RELOC_TYPE_FIXED)) {
                     DEBUG_FUNCTION_LINE("Link failed");
                     return false;
                 }

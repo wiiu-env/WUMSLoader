@@ -24,7 +24,7 @@ class FunctionSymbolData {
 public:
     FunctionSymbolData(const FunctionSymbolData &o2) = default;
 
-    FunctionSymbolData(const char* name, void *address, uint32_t size) :
+    FunctionSymbolData(const char *name, void *address, uint32_t size) :
             name(name),
             address(address),
             size(size) {
@@ -50,7 +50,7 @@ public:
 
 
 private:
-    const char* name;
+    const char *name;
     void *address;
     uint32_t size;
 };

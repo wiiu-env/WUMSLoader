@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < modules.GetFilecount(); i++) {
         DEBUG_FUNCTION_LINE("Loading module %s", modules.GetFilepath(i));
         auto moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, textSectionStart - destination_address, gModuleData->trampolines,
-                                                  DYN_LINK_TRAMPOLIN_LIST_LENGTH);
+                                                  DYN_LINK_TRAMPOLINE_LIST_LENGTH);
         if (moduleData) {
             DEBUG_FUNCTION_LINE("Successfully loaded %s", modules.GetFilepath(i));
             ModuleDataPersistence::saveModuleData(gModuleData, moduleData.value());

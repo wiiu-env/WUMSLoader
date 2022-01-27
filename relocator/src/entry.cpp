@@ -48,7 +48,7 @@ extern "C" int _start(int argc, char **argv) {
     return ((int (*)(int, char **)) (*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
-bool doRelocation(std::vector<std::shared_ptr<RelocationData>> &relocData, relocation_trampolin_entry_t *tramp_data, uint32_t tramp_length, bool skipAllocReplacement) {
+bool doRelocation(std::vector<std::shared_ptr<RelocationData>> &relocData, relocation_trampoline_entry_t *tramp_data, uint32_t tramp_length, bool skipAllocReplacement) {
     std::map<std::string, OSDynLoad_Module> moduleCache;
     for (auto const &curReloc: relocData) {
         std::string functionName = curReloc->getName();
@@ -107,8 +107,8 @@ bool doRelocation(std::vector<std::shared_ptr<RelocationData>> &relocData, reloc
         }
     }
 
-    DCFlushRange(tramp_data, tramp_length * sizeof(relocation_trampolin_entry_t));
-    ICInvalidateRange(tramp_data, tramp_length * sizeof(relocation_trampolin_entry_t));
+    DCFlushRange(tramp_data, tramp_length * sizeof(relocation_trampoline_entry_t));
+    ICInvalidateRange(tramp_data, tramp_length * sizeof(relocation_trampoline_entry_t));
     return true;
 }
 
@@ -126,7 +126,7 @@ bool ResolveRelocations(std::vector<std::shared_ptr<ModuleDataMinimal>> &loadedM
             // once with the default heap. Afterwards we can just rely on the custom heap.
             bool skipAllocFunction = skipMemoryMappingModule && (curModule->getExportName() == "homebrew_memorymapping" || curModule->getExportName() == "homebrew_functionpatcher");
             DEBUG_FUNCTION_LINE_VERBOSE("Skip alloc replace? %d\n", skipAllocFunction);
-            if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLIN_LIST_LENGTH, skipAllocFunction)) {
+            if (!doRelocation(relocData, gModuleData->trampolines, DYN_LINK_TRAMPOLINE_LIST_LENGTH, skipAllocFunction)) {
                 DEBUG_FUNCTION_LINE("FAIL\n");
                 wasSuccessful = false;
                 curModule->relocationsDone = false;
