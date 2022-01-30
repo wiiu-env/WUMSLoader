@@ -43,7 +43,7 @@ LDFLAGS	=	-g $(ARCH) $(RPXSPECS) --entry=_start -Wl,-Map,$(notdir $*.map)
 
 ifeq ($(DEBUG),1)
 CXXFLAGS += -DDEBUG -g
-CCFLAGS += -DDEBUG -g
+CFLAGS += -DDEBUG -g
 endif
 
 LIBS	:= -lwut -lz
