@@ -15,8 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-#include "../../source/module/RelocationData.h"
 #include "../../source/module/HookData.h"
+#include "../../source/module/RelocationData.h"
+#include <vector>
 
 #pragma once
 
@@ -75,11 +76,12 @@ public:
     }
 
     bool relocationsDone = false;
+
 private:
     std::vector<std::shared_ptr<RelocationData>> relocation_data_list;
     std::vector<std::shared_ptr<HookData>> hook_data_list;
     std::string export_name;
-    uint32_t entrypoint = 0;
+    uint32_t entrypoint               = 0;
     bool initBeforeRelocationDoneHook = false;
-    bool skipInitFini = false;
+    bool skipInitFini                 = false;
 };

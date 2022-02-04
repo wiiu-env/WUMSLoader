@@ -22,21 +22,21 @@ std::vector<std::shared_ptr<ModuleDataMinimal>> ModuleDataPersistence::loadModul
     for (int32_t i = 0; i < module_count; i++) {
         // Copy data from struct.
         module_information_single_t *module_data = &(moduleInformation->module_data[i]);
-        auto moduleData = std::make_shared<ModuleDataMinimal>();
+        auto moduleData                          = std::make_shared<ModuleDataMinimal>();
 
         moduleData->setEntrypoint(module_data->entrypoint);
         moduleData->setInitBeforeRelocationDoneHook(module_data->initBeforeRelocationDoneHook);
         moduleData->setSkipInitFini(module_data->skipInitFini);
         moduleData->setExportName(module_data->module_export_name);
 
-        for (auto &hook_entry: module_data->hook_entries) {
+        for (auto &hook_entry : module_data->hook_entries) {
             if (hook_entry.target == 0) {
                 continue;
             }
             moduleData->addHookData(std::make_shared<HookData>(static_cast<wums_hook_type_t>(hook_entry.type), reinterpret_cast<const void *>(hook_entry.target)));
         }
 
-        for (auto &linking_entry: module_data->linking_entries) {
+        for (auto &linking_entry : module_data->linking_entries) {
             if (linking_entry.destination == nullptr) {
                 break;
             }
@@ -60,7 +60,7 @@ std::vector<std::shared_ptr<ModuleDataMinimal>> ModuleDataPersistence::loadModul
                 continue;
             }
             auto rplInfo = std::make_shared<ImportRPLInformation>(importEntry->importName, importEntry->isData);
-            auto reloc = std::make_shared<RelocationData>(linking_entry.type, linking_entry.offset, linking_entry.addend, linking_entry.destination, functionEntry->functionName, rplInfo);
+            auto reloc   = std::make_shared<RelocationData>(linking_entry.type, linking_entry.offset, linking_entry.addend, linking_entry.destination, functionEntry->functionName, rplInfo);
 
             moduleData->addRelocationData(reloc);
         }

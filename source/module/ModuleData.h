@@ -17,15 +17,15 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <map>
-#include <set>
+#include "ExportData.h"
+#include "FunctionSymbolData.h"
+#include "HookData.h"
 #include "RelocationData.h"
 #include "SectionInfo.h"
-#include "ExportData.h"
-#include "HookData.h"
-#include "FunctionSymbolData.h"
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 
 struct FunctionSymbolDataComparator {
     bool operator()(const std::shared_ptr<FunctionSymbolData> &lhs,
@@ -164,6 +164,7 @@ public:
     }
 
     bool relocationsDone = false;
+
 private:
     std::vector<std::shared_ptr<RelocationData>> relocation_data_list;
     std::vector<std::shared_ptr<ExportData>> export_data_list;
@@ -173,13 +174,13 @@ private:
 
     std::string export_name;
 
-    uint32_t bssAddr = 0;
-    uint32_t bssSize = 0;
-    uint32_t sbssAddr = 0;
-    uint32_t sbssSize = 0;
-    uint32_t startAddress = 0;
-    uint32_t endAddress = 0;
-    uint32_t entrypoint = 0;
+    uint32_t bssAddr                  = 0;
+    uint32_t bssSize                  = 0;
+    uint32_t sbssAddr                 = 0;
+    uint32_t sbssSize                 = 0;
+    uint32_t startAddress             = 0;
+    uint32_t endAddress               = 0;
+    uint32_t entrypoint               = 0;
     bool initBeforeRelocationDoneHook = false;
-    bool skipInitFini = false;
+    bool skipInitFini                 = false;
 };

@@ -23,18 +23,16 @@
 class SectionInfo {
 
 public:
-    SectionInfo(std::string name, uint32_t address, uint32_t sectionSize) :
-            name(std::move(name)),
-            address(address),
-            sectionSize(sectionSize) {
+    SectionInfo(std::string name, uint32_t address, uint32_t sectionSize) : name(std::move(name)),
+                                                                            address(address),
+                                                                            sectionSize(sectionSize) {
     }
 
     SectionInfo() = default;
 
-    SectionInfo(const SectionInfo &o2) :
-            name(o2.name),
-            address(o2.address),
-            sectionSize(o2.sectionSize) {
+    SectionInfo(const SectionInfo &o2) : name(o2.name),
+                                         address(o2.address),
+                                         sectionSize(o2.sectionSize) {
     }
 
     SectionInfo &operator=(const SectionInfo &other) = default;

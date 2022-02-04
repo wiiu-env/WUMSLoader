@@ -1,8 +1,8 @@
-#include <wums.h>
 #include "hooks.h"
 #include "globals.h"
+#include <wums.h>
 
-static const char **hook_names = (const char *[]) {
+static const char **hook_names = (const char *[]){
         "WUMS_HOOK_INIT_WUT_MALLOC",
         "WUMS_HOOK_FINI_WUT_MALLOC",
         "WUMS_HOOK_INIT_WUT_NEWLIB",
@@ -21,8 +21,7 @@ static const char **hook_names = (const char *[]) {
         "WUMS_HOOK_APPLICATION_STARTS",
         "WUMS_HOOK_APPLICATION_ENDS",
         "WUMS_HOOK_RELOCATIONS_DONE",
-        "WUMS_HOOK_APPLICATION_REQUESTS_EXIT"
-};
+        "WUMS_HOOK_APPLICATION_REQUESTS_EXIT"};
 
 void CallHook(const std::vector<std::shared_ptr<ModuleDataMinimal>> &modules, wums_hook_type_t type, bool condition) {
     if (condition) {
@@ -32,7 +31,7 @@ void CallHook(const std::vector<std::shared_ptr<ModuleDataMinimal>> &modules, wu
 
 void CallHook(const std::vector<std::shared_ptr<ModuleDataMinimal>> &modules, wums_hook_type_t type) {
     DEBUG_FUNCTION_LINE_VERBOSE("Calling hook of type %s [%d] for all modules\n", hook_names[type], type);
-    for (auto &curModule: modules) {
+    for (auto &curModule : modules) {
         CallHook(curModule, type);
     }
 }
@@ -49,7 +48,7 @@ void CallHook(const std::shared_ptr<ModuleDataMinimal> &module, wums_hook_type_t
         return;
     }
 
-    for (auto &curHook: module->getHookDataList()) {
+    for (auto &curHook : module->getHookDataList()) {
         auto func_ptr = (uint32_t) curHook->getTarget();
         if (func_ptr == 0) {
             DEBUG_FUNCTION_LINE("Hook ptr was NULL\n");
@@ -70,17 +69,16 @@ void CallHook(const std::shared_ptr<ModuleDataMinimal> &module, wums_hook_type_t
                  type == WUMS_HOOK_INIT_WUT_SOCKETS ||
                  type == WUMS_HOOK_FINI_WUT_SOCKETS ||
                  type == WUMS_HOOK_INIT_WRAPPER ||
-                 type == WUMS_HOOK_FINI_WRAPPER
-            )) {
+                 type == WUMS_HOOK_FINI_WRAPPER)) {
                 DEBUG_FUNCTION_LINE_VERBOSE("Calling hook of type %s [%d] %d for %s: %08X\n", hook_names[type], type, curHook->getType(), module->getExportName().c_str(), curHook->getTarget());
-                ((void (*)()) ((uint32_t *) func_ptr))();
+                ((void (*)())((uint32_t *) func_ptr))();
                 break;
             } else if (type == WUMS_HOOK_INIT ||
                        type == WUMS_HOOK_RELOCATIONS_DONE) {
                 DEBUG_FUNCTION_LINE_VERBOSE("Calling hook of type %s [%d] %d for %s: %08X\n", hook_names[type], type, curHook->getType(), module->getExportName().c_str(), curHook->getTarget());
                 wums_app_init_args_t args;
                 args.module_information = gModuleData;
-                ((void (*)(wums_app_init_args_t *)) ((uint32_t *) func_ptr))(&args);
+                ((void (*)(wums_app_init_args_t *))((uint32_t *) func_ptr))(&args);
             } else {
                 DEBUG_FUNCTION_LINE("#########################################\n");
                 DEBUG_FUNCTION_LINE("#########HOOK NOT IMPLEMENTED %d#########\n", type);

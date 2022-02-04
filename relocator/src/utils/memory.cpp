@@ -14,21 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
-#include <coreinit/memexpheap.h>
-#include <coreinit/memdefaultheap.h>
-#include <coreinit/memorymap.h>
+#include "logger.h"
 #include <coreinit/cache.h>
+#include <coreinit/memdefaultheap.h>
+#include <coreinit/memexpheap.h>
+#include <coreinit/memorymap.h>
+#include <errno.h>
 #include <malloc.h>
 #include <string.h>
-#include <errno.h>
-#include "logger.h"
 
 extern MEMHeapHandle gHeapHandle;
 
 void *MEMAllocSafe(uint32_t size, uint32_t align) {
-    void *res = nullptr;
+    void *res                = nullptr;
     MEMHeapHandle heapHandle = gHeapHandle;
-    res = MEMAllocFromExpHeapEx(heapHandle, size, align);
+    res                      = MEMAllocFromExpHeapEx(heapHandle, size, align);
     return res;
 }
 
@@ -57,9 +57,9 @@ void MemoryFree(void *ptr) {
     }
 }
 
-uint32_t MEMAlloc __attribute__((__section__ (".data"))) = (uint32_t) MemoryAlloc;
-uint32_t MEMAllocEx __attribute__((__section__ (".data"))) = (uint32_t) MemoryAllocEx;
-uint32_t MEMFree __attribute__((__section__ (".data"))) = (uint32_t) MemoryFree;
+uint32_t MEMAlloc __attribute__((__section__(".data")))   = (uint32_t) MemoryAlloc;
+uint32_t MEMAllocEx __attribute__((__section__(".data"))) = (uint32_t) MemoryAllocEx;
+uint32_t MEMFree __attribute__((__section__(".data")))    = (uint32_t) MemoryFree;
 
 //!-------------------------------------------------------------------------------------------
 //! reent versions
@@ -113,12 +113,10 @@ struct mallinfo _mallinfo_r(struct _reent *r) {
     return info;
 }
 
-void
-_malloc_stats_r(struct _reent *r) {
+void _malloc_stats_r(struct _reent *r) {
 }
 
-int
-_mallopt_r(struct _reent *r, int param, int value) {
+int _mallopt_r(struct _reent *r, int param, int value) {
     return 0;
 }
 
@@ -137,7 +135,6 @@ _pvalloc_r(struct _reent *r, size_t size) {
     return MemoryAllocEx((size + (OS_PAGE_SIZE - 1)) & ~(OS_PAGE_SIZE - 1), OS_PAGE_SIZE);
 }
 
-int
-_malloc_trim_r(struct _reent *r, size_t pad) {
+int _malloc_trim_r(struct _reent *r, size_t pad) {
     return 0;
 }

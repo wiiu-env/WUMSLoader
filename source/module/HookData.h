@@ -5,7 +5,7 @@
 class HookData {
 public:
     HookData(wums_hook_type_t type, const void *target) {
-        this->type = type;
+        this->type   = type;
         this->target = target;
     }
 
