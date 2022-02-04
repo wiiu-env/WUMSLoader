@@ -9,7 +9,7 @@ dyn_linking_function_t *DynamicLinkingHelper::getOrAddFunctionEntryByName(dyn_li
         return nullptr;
     }
     dyn_linking_function_t *result = nullptr;
-    for (auto &function: data->functions) {
+    for (auto &function : data->functions) {
         dyn_linking_function_t *curEntry = &function;
         if (strlen(curEntry->functionName) == 0) {
             if (strlen(functionName) > DYN_LINK_FUNCTION_NAME_LENGTH) {
@@ -41,7 +41,7 @@ dyn_linking_import_t *DynamicLinkingHelper::getOrAddImport(dyn_linking_relocatio
         return nullptr;
     }
     dyn_linking_import_t *result = nullptr;
-    for (auto &import: data->imports) {
+    for (auto &import : data->imports) {
         dyn_linking_import_t *curEntry = &import;
         if (strlen(curEntry->importName) == 0) {
             if (strlen(importName) > DYN_LINK_IMPORT_NAME_LENGTH) {
@@ -50,7 +50,7 @@ dyn_linking_import_t *DynamicLinkingHelper::getOrAddImport(dyn_linking_relocatio
             }
             strncpy(curEntry->importName, importName, DYN_LINK_IMPORT_NAME_LENGTH);
             curEntry->isData = isData;
-            result = curEntry;
+            result           = curEntry;
             break;
         }
         if (strncmp(curEntry->importName, importName, DYN_LINK_IMPORT_NAME_LENGTH) == 0 && (curEntry->isData == isData)) {
@@ -95,12 +95,12 @@ bool DynamicLinkingHelper::addRelocationEntry(dyn_linking_relocation_entry_t *li
         if (curEntry->functionEntry != nullptr) {
             continue;
         }
-        curEntry->type = type;
-        curEntry->offset = offset;
-        curEntry->addend = addend;
-        curEntry->destination = destination;
+        curEntry->type          = type;
+        curEntry->offset        = offset;
+        curEntry->addend        = addend;
+        curEntry->destination   = destination;
         curEntry->functionEntry = functionName;
-        curEntry->importEntry = importInfo;
+        curEntry->importEntry   = importInfo;
 
         return true;
     }

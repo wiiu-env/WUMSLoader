@@ -1,13 +1,14 @@
-#pragma  once
+#pragma once
 
+#include <string>
 #include <wums.h>
 
 class ExportData {
 
 public:
     ExportData(wums_entry_type_t type, const std::string &name, const void *address) {
-        this->type = type;
-        this->name = name;
+        this->type    = type;
+        this->name    = name;
         this->address = address;
     }
 

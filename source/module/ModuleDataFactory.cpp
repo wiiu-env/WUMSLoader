@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-#include <string>
-#include <vector>
-#include <map>
-#include <coreinit/cache.h>
-#include <wums.h>
 #include "ModuleDataFactory.h"
-#include "utils/utils.h"
 #include "ElfUtils.h"
 #include "FunctionSymbolData.h"
+#include "utils/utils.h"
+#include <coreinit/cache.h>
+#include <map>
+#include <string>
+#include <vector>
+#include <wums.h>
 
 using namespace ELFIO;
 
@@ -49,7 +49,7 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
 
     uint32_t entrypoint = offset_text + (uint32_t) reader.get_entry() - 0x02000000;
 
-    uint32_t totalSize = 0;
+    uint32_t totalSize  = 0;
     uint32_t endAddress = 0;
 
     for (uint32_t i = 0; i < sec_num; ++i) {
@@ -133,18 +133,18 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
     }
     auto relocationData = getImportRelocationData(reader, destinations);
 
-    for (auto const &reloc: relocationData) {
+    for (auto const &reloc : relocationData) {
         moduleData->addRelocationData(reloc);
     }
 
     auto secInfo = moduleData->getSectionInfo(".wums.exports");
     if (secInfo && secInfo.value()->getSize() > 0) {
         size_t entries_count = secInfo.value()->getSize() / sizeof(wums_entry_t);
-        auto *entries = (wums_entry_t *) secInfo.value()->getAddress();
+        auto *entries        = (wums_entry_t *) secInfo.value()->getAddress();
         if (entries != nullptr) {
             for (size_t j = 0; j < entries_count; j++) {
                 wums_entry_t *exp = &entries[j];
-                DEBUG_FUNCTION_LINE("Saving export of type %08X, name %s, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, exp->type, exp->name, (void *) exp->address);
+                DEBUG_FUNCTION_LINE("Saving export of type %08X, name %s, target: %08X" /*,pluginData.getPluginInformation()->getName().c_str()*/, exp->type, exp->name, (void *) exp->address);
                 auto exportData = std::make_shared<ExportData>(exp->type, exp->name, exp->address);
                 moduleData->addExportData(exportData);
             }
@@ -154,11 +154,11 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
     secInfo = moduleData->getSectionInfo(".wums.hooks");
     if (secInfo && secInfo.value()->getSize() > 0) {
         size_t entries_count = secInfo.value()->getSize() / sizeof(wums_hook_t);
-        auto *hooks = (wums_hook_t *) secInfo.value()->getAddress();
+        auto *hooks          = (wums_hook_t *) secInfo.value()->getAddress();
         if (hooks != nullptr) {
             for (size_t j = 0; j < entries_count; j++) {
                 wums_hook_t *hook = &hooks[j];
-                DEBUG_FUNCTION_LINE("Saving hook of type %08X, target: %08X"/*,pluginData.getPluginInformation()->getName().c_str()*/, hook->type, hook->target);
+                DEBUG_FUNCTION_LINE("Saving hook of type %08X, target: %08X" /*,pluginData.getPluginInformation()->getName().c_str()*/, hook->type, hook->target);
                 auto hookData = std::make_shared<HookData>(hook->type, hook->target);
                 moduleData->addHookData(hookData);
             }
@@ -212,7 +212,7 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
         }
     }
 
-    char *strTable = (char *) endAddress;
+    char *strTable     = (char *) endAddress;
     uint32_t strOffset = 0;
 
     // Get the symbol for functions.
@@ -225,16 +225,16 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
             if (sym_no > 0) {
                 for (Elf_Half j = 0; j < sym_no; ++j) {
                     std::string name;
-                    Elf64_Addr value = 0;
-                    Elf_Xword size = 0;
-                    unsigned char bind = 0;
-                    unsigned char type = 0;
-                    Elf_Half section = 0;
+                    Elf64_Addr value    = 0;
+                    Elf_Xword size      = 0;
+                    unsigned char bind  = 0;
+                    unsigned char type  = 0;
+                    Elf_Half section    = 0;
                     unsigned char other = 0;
                     if (symbols.get_symbol(j, name, value, size, bind, type, section, other)) {
                         if (type == STT_FUNC) { // We only care about functions.
                             auto sectionVal = reader.sections[section];
-                            auto offsetVal = value - sectionVal->get_address();
+                            auto offsetVal  = value - sectionVal->get_address();
                             auto sectionOpt = moduleData->getSectionInfo(sectionVal->get_name());
                             if (!sectionOpt.has_value()) {
                                 continue;

@@ -1,37 +1,37 @@
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
 #include "logger.h"
 #include <coreinit/debug.h>
 #include <coreinit/systeminfo.h>
 #include <coreinit/thread.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static int log_socket __attribute__((section(".data"))) = -1;
 static struct sockaddr_in connect_addr __attribute__((section(".data")));
 static volatile int log_lock __attribute__((section(".data"))) = 0;
 
-#define SOL_SOCKET      -1
+#define SOL_SOCKET       -1
 
 
-#define SOCK_DGRAM      2
+#define SOCK_DGRAM       2
 
 
 #define INADDR_ANY       0
 #define INADDR_BROADCAST 0xFFFFFFFF
 
-#define PF_UNSPEC       0
-#define PF_INET         2
-#define PF_INET6        23
+#define PF_UNSPEC        0
+#define PF_INET          2
+#define PF_INET6         23
 
-#define AF_UNSPEC       PF_UNSPEC
-#define AF_INET         PF_INET
-#define AF_INET6        PF_INET6
+#define AF_UNSPEC        PF_UNSPEC
+#define AF_INET          PF_INET
+#define AF_INET6         PF_INET6
 
-#define IPPROTO_UDP     17
+#define IPPROTO_UDP      17
 
-#define SO_BROADCAST    0x0020      // broadcast
+#define SO_BROADCAST     0x0020 // broadcast
 
 typedef uint16_t sa_family_t;
 
@@ -65,15 +65,15 @@ extern uint32_t htonl(uint32_t val);
 
 void log_init() {
     int broadcastEnable = 1;
-    log_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    log_socket          = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (log_socket < 0)
         return;
 
     setsockopt(log_socket, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
 
     memset(&connect_addr, 0, sizeof(struct sockaddr_in));
-    connect_addr.sin_family = AF_INET;
-    connect_addr.sin_port = 4405;
+    connect_addr.sin_family      = AF_INET;
+    connect_addr.sin_port        = 4405;
     connect_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 }
 
@@ -102,7 +102,7 @@ void log_print(const char *str) {
     int ret;
     while (len > 0) {
         int block = len < 1400 ? len : 1400; // take max 1400 bytes per UDP packet
-        ret = sendto(log_socket, str, block, 0, (struct sockaddr *) &connect_addr, sizeof(struct sockaddr_in));
+        ret       = sendto(log_socket, str, block, 0, (struct sockaddr *) &connect_addr, sizeof(struct sockaddr_in));
         if (ret < 0)
             break;
 
@@ -139,4 +139,3 @@ void log_printf(const char *format, ...) {
     }
     va_end(va);
 }
-

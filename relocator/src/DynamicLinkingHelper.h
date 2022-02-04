@@ -1,10 +1,10 @@
 #pragma once
 
-#include <wums.h>
+#include "../../source/module/RelocationData.h"
 #include "utils/logger.h"
 #include <string>
 #include <vector>
-#include "../../source/module/RelocationData.h"
+#include <wums.h>
 
 class DynamicLinkingHelper {
 public:

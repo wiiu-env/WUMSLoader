@@ -1,8 +1,8 @@
 #pragma once
 
-#include <wums.h>
-#include <vector>
 #include "ModuleDataMinimal.h"
+#include <vector>
+#include <wums.h>
 
 class ModuleDataPersistence {
 public:

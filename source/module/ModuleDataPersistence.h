@@ -1,7 +1,7 @@
 #pragma once
 
-#include <wums.h>
 #include "ModuleData.h"
+#include <wums.h>
 
 class ModuleDataPersistence {
 public:

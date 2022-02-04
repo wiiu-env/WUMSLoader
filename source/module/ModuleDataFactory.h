@@ -17,12 +17,12 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <map>
-#include <wums.h>
 #include "ModuleData.h"
 #include "elfio/elfio.hpp"
+#include <map>
+#include <string>
+#include <vector>
+#include <wums.h>
 
 class ModuleDataFactory {
 public:

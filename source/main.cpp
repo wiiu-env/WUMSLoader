@@ -1,15 +1,15 @@
 #include <cstring>
 
 #include <elfio/elfio.hpp>
-#include <sysapp/launch.h>
 #include <nn/act/client_cpp.h>
+#include <sysapp/launch.h>
 
-#include "fs/DirList.h"
-#include "module/ModuleDataPersistence.h"
-#include "module/ModuleDataFactory.h"
 #include "ElfUtils.h"
-#include "kernel.h"
+#include "fs/DirList.h"
 #include "globals.h"
+#include "kernel.h"
+#include "module/ModuleDataFactory.h"
+#include "module/ModuleDataPersistence.h"
 
 extern "C" uint32_t textStart();
 extern "C" void __fini();
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     SetupRelocator();
 
     nn::act::Initialize();
-    nn::act::SlotNo slot = nn::act::GetSlotNo();
+    nn::act::SlotNo slot        = nn::act::GetSlotNo();
     nn::act::SlotNo defaultSlot = nn::act::GetDefaultAccount();
     nn::act::Finalize();
 
