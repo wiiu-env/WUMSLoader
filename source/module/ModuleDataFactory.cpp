@@ -17,7 +17,6 @@
 
 #include "ModuleDataFactory.h"
 #include "ElfUtils.h"
-#include "FunctionSymbolData.h"
 #include "utils/utils.h"
 #include <coreinit/cache.h>
 #include <map>
@@ -32,15 +31,39 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
     elfio reader;
     std::shared_ptr<ModuleData> moduleData = std::make_shared<ModuleData>();
 
+    FILE *f = fopen(path.c_str(), "rb");
+    fseek(f, 0, SEEK_END);
+    auto fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    auto *buffer = static_cast<char *>(memalign(0x40, ROUNDUP(fsize + 1, 0x40)));
+    if (!buffer) {
+        fclose(f);
+        DEBUG_FUNCTION_LINE("Failed to allocate buffer");
+    }
+    if ((long) fread(buffer, fsize, 1, f) != fsize) {
+        DEBUG_FUNCTION_LINE("Failed to load data into buffer");
+        free(buffer);
+        fclose(f);
+        return {};
+    }
+    fclose(f);
+
     // Load ELF data
-    if (!reader.load(path)) {
+    if (!reader.load(buffer, fsize)) {
         DEBUG_FUNCTION_LINE("Can't find or process %s", path.c_str());
+        free(buffer);
         return std::nullopt;
     }
 
     uint32_t sec_num = reader.sections.size();
 
     auto **destinations = (uint8_t **) malloc(sizeof(uint8_t *) * sec_num);
+
+    if (!destinations) {
+        DEBUG_FUNCTION_LINE("Failed to alloc memory for destinations");
+        free(buffer);
+    }
 
     uint32_t baseOffset = *destination_address_ptr;
 
@@ -64,6 +87,8 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
             totalSize += sectionSize;
             if (totalSize > maximum_size) {
                 DEBUG_FUNCTION_LINE("Couldn't load setup module because it's too big.");
+                free(destinations);
+                free(buffer);
                 return {};
             }
 
@@ -86,6 +111,7 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
             } else {
                 DEBUG_FUNCTION_LINE("Unhandled case");
                 free(destinations);
+                free(buffer);
                 return std::nullopt;
             }
 
@@ -127,6 +153,7 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
             if (!linkSection(reader, psec->get_index(), (uint32_t) destinations[psec->get_index()], offset_text, offset_data, trampoline_data, trampoline_data_length)) {
                 DEBUG_FUNCTION_LINE("elfLink failed");
                 free(destinations);
+                free(buffer);
                 return std::nullopt;
             }
         }
@@ -203,6 +230,8 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
                     } else if (key == "wums") {
                         if (value != "0.3") {
                             DEBUG_FUNCTION_LINE("Warning: Ignoring module - Unsupported WUMS version: %s.\n", value.c_str());
+                            free(destinations);
+                            free(buffer);
                             return std::nullopt;
                         }
                     }
@@ -259,6 +288,7 @@ ModuleDataFactory::load(const std::string &path, uint32_t *destination_address_p
     ICInvalidateRange((void *) *destination_address_ptr, totalSize);
 
     free(destinations);
+    free(buffer);
 
     moduleData->setEntrypoint(entrypoint);
     moduleData->setStartAddress(*destination_address_ptr);
