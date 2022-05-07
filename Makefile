@@ -31,7 +31,7 @@ INCLUDES	:=	source
 #-------------------------------------------------------------------------------
 # options for code generation
 #-------------------------------------------------------------------------------
-CFLAGS	:=	-Wall -O2 -ffunction-sections \
+CFLAGS	:=	-Wall -Os -ffunction-sections \
 			$(MACHDEP)
 
 CFLAGS	+=	$(INCLUDE) -D__WIIU__ -D__WUT__
@@ -42,8 +42,15 @@ ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) --entry=_start -Wl,-Map,$(notdir $*.map)
 
 ifeq ($(DEBUG),1)
+export DEBUG=1
 CXXFLAGS += -DDEBUG -g
 CFLAGS += -DDEBUG -g
+endif
+
+ifeq ($(DEBUG),VERBOSE)
+export DEBUG=VERBOSE
+CXXFLAGS += -DDEBUG -DVERBOSE_DEBUG -g
+CFLAGS += -DDEBUG -DVERBOSE_DEBUG -g
 endif
 
 LIBS	:= -lwut -lz
@@ -91,7 +98,7 @@ endif
 
 export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES))
 export OFILES_SRC	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
-export OFILES 	:=	$(OFILES_BIN) $(OFILES_SRC) relocator.elf.o
+export OFILES 	:=	$(OFILES_BIN) $(OFILES_SRC) wumsloader.elf.o
 export HFILES_BIN	:=	$(addsuffix .h,$(subst .,_,$(BINFILES)))
 
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
@@ -107,13 +114,13 @@ all: $(BUILD)
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) --no-print-directory -C relocator
+	@$(MAKE) --no-print-directory -C wumsloader
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #-------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	make clean -C relocator
+	make clean -C wumsloader
 	@rm -fr $(BUILD) $(TARGET).rpx $(TARGET).elf
 
 #-------------------------------------------------------------------------------
@@ -126,16 +133,16 @@ DEPENDS	:=	$(OFILES:.o=.d)
 # main targets
 #-------------------------------------------------------------------------------
 
-relocator_elf := ../relocator/relocator.elf
+wumsloader_elf := ../wumsloader/wumsloader.elf
 
 all	:	 $(OUTPUT).rpx
 
-$(relocator_elf): 
-	make -C ../relocator
+$(wumsloader_elf):
+	make -C ../wumsloader
 
 $(OUTPUT).rpx	:	$(OUTPUT).elf
 $(OUTPUT).elf	:   $(OFILES)
-$(OFILES)       :   relocator_elf.h
+$(OFILES)       :   wumsloader_elf.h
 
 $(OFILES_SRC)	: $(HFILES_BIN)
 
@@ -152,7 +159,7 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 	@echo $(notdir $<)
 	@$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d -x assembler-with-cpp $(ASFLAGS) -c $< -o $@ $(ERROR_FILTER)
     
-relocator_elf.h: $(relocator_elf)
+wumsloader_elf.h: $(wumsloader_elf)
 	bin2s -a 32 -H `(echo $(<F) | tr . _)`.h $< | $(AS) -o $(<F).o
 
 -include $(DEPENDS)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 #define ADDRESS_main_entry_hook 0x0101C56C
 
@@ -10,7 +10,7 @@
 #define KERN_SYSCALL_TBL_4      0xFFEAAA60 // works with home menu
 #define KERN_SYSCALL_TBL_5      0xFFEAAE60 // works with browser (previously KERN_SYSCALL_TBL)
 
-void SetupRelocator();
+void SetupWUMSLoader();
 
 void KernelWriteU32(uint32_t addr, uint32_t value);
 

@@ -1,51 +1,26 @@
-#include <cstring>
-
-#include <elfio/elfio.hpp>
+#include "../wumsloader/src/globals.h"
+#include "kernel.h"
+#include "utils/logger.h"
 #include <nn/act/client_cpp.h>
 #include <sysapp/launch.h>
 
-#include "ElfUtils.h"
-#include "fs/DirList.h"
-#include "globals.h"
-#include "kernel.h"
-#include "module/ModuleDataFactory.h"
-#include "module/ModuleDataPersistence.h"
-
-extern "C" uint32_t textStart();
 extern "C" void __fini();
-
 int main(int argc, char **argv) {
     initLogging();
-
-    // We subtract 0x100 to be safe.
-    uint32_t textSectionStart = textStart() - 0x100;
-
-    memset((void *) gModuleData, 0, sizeof(module_information_t));
-    gModuleData->version = MODULE_INFORMATION_VERSION;
 
     std::string basePath = "fs:/vol/external01/wiiu";
     if (argc >= 1) {
         basePath = argv[0];
     }
 
-    DirList modules(basePath + "/modules", ".wms", DirList::Files, 1);
-    modules.SortList();
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow="
+    strncpy(ENVRIONMENT_STRING, basePath.c_str(), ENVIRONMENT_PATH_LENGTH - 1);
+#pragma GCC diagnostic pop
 
-    uint32_t destination_address = ((uint32_t) gModuleData + (sizeof(module_information_t) + 0x0000FFFF)) & 0xFFFF0000;
-    for (int i = 0; i < modules.GetFilecount(); i++) {
-        DEBUG_FUNCTION_LINE("Loading module %s", modules.GetFilepath(i));
-        auto moduleData = ModuleDataFactory::load(modules.GetFilepath(i), &destination_address, textSectionStart - destination_address, gModuleData->trampolines,
-                                                  DYN_LINK_TRAMPOLINE_LIST_LENGTH);
-        if (moduleData) {
-            DEBUG_FUNCTION_LINE("Successfully loaded %s", modules.GetFilepath(i));
-            ModuleDataPersistence::saveModuleData(gModuleData, moduleData.value());
-        } else {
-            DEBUG_FUNCTION_LINE("Failed to load %s", modules.GetFilepath(i));
-        }
-    }
-
-    DEBUG_FUNCTION_LINE("Setup relocator");
-    SetupRelocator();
+    DEBUG_FUNCTION_LINE("Setup wumsloader");
+    SetupWUMSLoader();
 
     nn::act::Initialize();
     nn::act::SlotNo slot        = nn::act::GetSlotNo();
