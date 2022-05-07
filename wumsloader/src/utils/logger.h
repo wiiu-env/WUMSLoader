@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #define LOG_APP_TYPE                "M"
-#define LOG_APP_NAME                "WUMSInstaller"
+#define LOG_APP_NAME                "WUMSLoader"
 
 #define __FILENAME_X__              (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define __FILENAME__                (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILENAME_X__)

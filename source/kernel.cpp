@@ -1,20 +1,20 @@
 #include "kernel.h"
 #include "ElfUtils.h"
-#include "relocator_elf.h"
+#include "wumsloader_elf.h"
 #include <coreinit/cache.h>
 #include <coreinit/memorymap.h>
 
 extern "C" void SCKernelCopyData(uint32_t addr, uint32_t src, uint32_t len);
 extern "C" void SC_KernelCopyData(uint32_t addr, uint32_t src, uint32_t len);
 
-void SetupRelocator() {
+void SetupWUMSLoader() {
     kern_write((void *) (KERN_SYSCALL_TBL_1 + (0x25 * 4)), (unsigned int) SCKernelCopyData);
     kern_write((void *) (KERN_SYSCALL_TBL_2 + (0x25 * 4)), (unsigned int) SCKernelCopyData);
     kern_write((void *) (KERN_SYSCALL_TBL_3 + (0x25 * 4)), (unsigned int) SCKernelCopyData);
     kern_write((void *) (KERN_SYSCALL_TBL_4 + (0x25 * 4)), (unsigned int) SCKernelCopyData);
     kern_write((void *) (KERN_SYSCALL_TBL_5 + (0x25 * 4)), (unsigned int) SCKernelCopyData);
 
-    uint32_t entryPoint = load_loader_elf(0, (char *) relocator_elf, relocator_elf_size);
+    uint32_t entryPoint = load_loader_elf(0, (char *) wumsloader_elf, wumsloader_elf_size);
 
     unsigned int repl_addr = ADDRESS_main_entry_hook;
     KernelWriteU32(repl_addr, 0x48000003 | entryPoint);
