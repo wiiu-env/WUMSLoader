@@ -92,4 +92,4 @@ SECTIONS {
 	}
 }
 
-ASSERT((SIZEOF(.text) + SIZEOF(.data) + SIZEOF(.rodata) + SIZEOF(.eh_frame) + SIZEOF(.bss)) < 0x130000, "Memory overlapping with modules.");
+ASSERT((SIZEOF(.text) + SIZEOF(.data) + SIZEOF(.rodata) + SIZEOF(.eh_frame) + SIZEOF(.bss)) < 0x0D0000, "Memory overlapping with modules.");
