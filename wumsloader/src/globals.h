@@ -15,7 +15,7 @@ extern std::unique_ptr<module_information_single_t[]> gModuleDataInfo;
 #define MEMORY_REGION_SIZE                    0x00800000
 
 #define CUSTOM_RPX_LOADER_RETURN_CODE         0x00009000 // We have to skip the first 0x00009000 bytes because it's still used
-#define RELOCATOR_SIZE                        0x0D0000   // Maximum size of the wumsloader, needs to match the one defined in link.ld
+#define RELOCATOR_SIZE                        0x0E0000   // Maximum size of the wumsloader, needs to match the one defined in link.ld
 #define ENVIRONMENT_PATH_LENGTH               0x100      // Length of the EnvironmentPath.
 
 #define MEMORY_REGION_ENVIRONMENT_STRING_ADRR (MEMORY_REGION_START + CUSTOM_RPX_LOADER_RETURN_CODE + RELOCATOR_SIZE)
