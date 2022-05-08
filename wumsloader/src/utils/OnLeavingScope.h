@@ -46,8 +46,8 @@
 #ifndef CRASCIT_ONLEAVINGSCOPE_H
 #define CRASCIT_ONLEAVINGSCOPE_H
 
-#include <utility>
 #include <type_traits>
+#include <utility>
 
 
 /**
@@ -61,40 +61,32 @@
 * function instead.
 */
 template<typename Func>
-class OnLeavingScope
-{
+class OnLeavingScope {
 public:
-   // Prevent copying
-   OnLeavingScope(const OnLeavingScope&) = delete;
-   OnLeavingScope& operator=(const OnLeavingScope&) = delete;
+    // Prevent copying
+    OnLeavingScope(const OnLeavingScope &) = delete;
+    OnLeavingScope &operator=(const OnLeavingScope &) = delete;
 
-   // Allow moving
-   OnLeavingScope(OnLeavingScope&& other) :
-                                            m_func(std::move(other.m_func)),
-                                            m_owner(other.m_owner)
-   {
-       other.m_owner = false;
-   }
+    // Allow moving
+    OnLeavingScope(OnLeavingScope &&other) : m_func(std::move(other.m_func)),
+                                             m_owner(other.m_owner) {
+        other.m_owner = false;
+    }
 
-   OnLeavingScope(const Func& f) :
-                                   m_func(f),
-                                   m_owner(true)
-   {
-   }
-   OnLeavingScope(Func&& f) :
-                              m_func(std::move(f)),
-                              m_owner(true)
-   {
-   }
-   ~OnLeavingScope()
-   {
-       if (m_owner)
-           m_func();
-   }
+    OnLeavingScope(const Func &f) : m_func(f),
+                                    m_owner(true) {
+    }
+    OnLeavingScope(Func &&f) : m_func(std::move(f)),
+                               m_owner(true) {
+    }
+    ~OnLeavingScope() {
+        if (m_owner)
+            m_func();
+    }
 
 private:
-   Func  m_func;
-   bool  m_owner;
+    Func m_func;
+    bool m_owner;
 };
 
 
@@ -114,9 +106,8 @@ private:
 * from the object passed as the function argument.
 */
 template<typename Func>
-OnLeavingScope<typename std::decay<Func>::type> onLeavingScope(Func&& f)
-{
-   return OnLeavingScope<typename std::decay<Func>::type>(std::forward<Func>(f));
+OnLeavingScope<typename std::decay<Func>::type> onLeavingScope(Func &&f) {
+    return OnLeavingScope<typename std::decay<Func>::type>(std::forward<Func>(f));
 }
 
 #endif // CRASCIT_ONLEAVINGSCOPE_H
