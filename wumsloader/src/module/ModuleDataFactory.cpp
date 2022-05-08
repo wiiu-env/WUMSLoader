@@ -20,6 +20,7 @@
 #include "utils/ElfUtils.h"
 #include "utils/OnLeavingScope.h"
 #include "utils/logger.h"
+#include "utils/utils.h"
 #include <coreinit/cache.h>
 #include <coreinit/memdefaultheap.h>
 #include <map>
@@ -30,7 +31,7 @@ using namespace ELFIO;
 
 std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::string &path) {
     elfio reader;
-    auto moduleData = std::make_shared<ModuleData>();
+    auto moduleData = make_shared_nothrow<ModuleData>();
     if (!moduleData) {
         DEBUG_FUNCTION_LINE_ERR("Failed to alloc module data");
         return {};
@@ -52,7 +53,7 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
     }
     uint32_t sec_num = reader.sections.size();
 
-    auto destinations = std::make_unique<uint8_t *[]>(sec_num);
+    auto destinations = make_unique_nothrow<uint8_t *[]>(sec_num);
     if (!destinations) {
         DEBUG_FUNCTION_LINE_ERR("Failed alloc memory for destinations array");
         return {};
@@ -83,7 +84,7 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
         }
     }
 
-    auto data = std::make_unique<uint8_t[]>(text_size + data_size);
+    auto data = make_unique_nothrow<uint8_t[]>(text_size + data_size);
     if (!data) {
         DEBUG_FUNCTION_LINE_ERR("Failed to alloc memory for the .text section (%d bytes)", text_size);
         return {};
@@ -146,7 +147,11 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                 moduleData->setSBSSLocation(destination, sectionSize);
                 memset(reinterpret_cast<void *>(destination), 0, sectionSize);
             }
-            auto sectionInfo = std::make_shared<SectionInfo>(psec->get_name(), destination, sectionSize);
+            auto sectionInfo = make_shared_nothrow<SectionInfo>(psec->get_name(), destination, sectionSize);
+            if (!sectionInfo) {
+                DEBUG_FUNCTION_LINE_ERR("Failed to allocate memory for section info");
+                return {};
+            }
             moduleData->addSectionInfo(sectionInfo);
             DEBUG_FUNCTION_LINE("Saved %s section info. Location: %08X size: %08X", psec->get_name().c_str(), destination, sectionSize);
 
@@ -175,9 +180,10 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
             for (size_t j = 0; j < entries_count; j++) {
                 wums_entry_t *exp = &entries[j];
                 DEBUG_FUNCTION_LINE("Saving export of type %08X, name %s, target: %08X", exp->type, exp->name, exp->address);
-                auto exportData = std::make_unique<ExportData>(exp->type, exp->name, exp->address);
+                auto exportData = make_unique_nothrow<ExportData>(exp->type, exp->name, exp->address);
                 if (!exportData) {
                     DEBUG_FUNCTION_LINE_ERR("Failed to alloc ExportData");
+                    return {};
                 }
                 moduleData->addExportData(std::move(exportData));
             }
@@ -192,9 +198,10 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
             for (size_t j = 0; j < entries_count; j++) {
                 wums_hook_t *hook = &hooks[j];
                 DEBUG_FUNCTION_LINE("Saving hook of type %08X, target: %08X", hook->type, hook->target);
-                auto hookData = std::make_unique<HookData>(hook->type, hook->target);
+                auto hookData = make_unique_nothrow<HookData>(hook->type, hook->target);
                 if (!hookData) {
                     DEBUG_FUNCTION_LINE_ERR("Failed to alloc HookData");
+                    return {};
                 }
                 moduleData->addHookData(std::move(hookData));
             }
@@ -272,9 +279,10 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                                 continue;
                             }
                             auto finalAddress       = offsetVal + sectionOpt.value()->getAddress();
-                            auto functionSymbolData = std::make_shared<FunctionSymbolData>(name, (void *) finalAddress, (uint32_t) size);
+                            auto functionSymbolData = make_shared_nothrow<FunctionSymbolData>(name, (void *) finalAddress, (uint32_t) size);
                             if (!functionSymbolData) {
                                 DEBUG_FUNCTION_LINE_ERR("Failed to alloc FunctionSymbolData");
+                                return std::nullopt;
                             } else {
                                 moduleData->addFunctionSymbolData(std::move(functionSymbolData));
                             }
@@ -293,7 +301,7 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
 
     if (totalSize > text_size + data_size) {
         DEBUG_FUNCTION_LINE_ERR("We didn't allocate enough memory!!");
-        OSFatal("We didn't allocate enough memory!!");
+        return std::nullopt;
     }
 
     moduleData->setDataPtr(std::move(data), totalSize);
@@ -307,7 +315,7 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
     return moduleData;
 }
 
-void ModuleDataFactory::getImportRelocationData(std::shared_ptr<ModuleData> &moduleData, ELFIO::elfio &reader, uint8_t **destinations) {
+bool ModuleDataFactory::getImportRelocationData(std::shared_ptr<ModuleData> &moduleData, ELFIO::elfio &reader, uint8_t **destinations) {
     std::map<uint32_t, std::shared_ptr<ImportRPLInformation>> infoMap;
 
     uint32_t sec_num = reader.sections.size();
@@ -315,7 +323,12 @@ void ModuleDataFactory::getImportRelocationData(std::shared_ptr<ModuleData> &mod
     for (uint32_t i = 0; i < sec_num; ++i) {
         auto *psec = reader.sections[i];
         if (psec->get_type() == 0x80000002) {
-            infoMap[i] = std::make_shared<ImportRPLInformation>(psec->get_name());
+            auto info = make_shared_nothrow<ImportRPLInformation>(psec->get_name());
+            if (!info) {
+                DEBUG_FUNCTION_LINE_ERR("Failed too allocate ImportRPLInformation");
+                return false;
+            }
+            infoMap[i] = std::move(info);
         }
     }
 
@@ -348,23 +361,23 @@ void ModuleDataFactory::getImportRelocationData(std::shared_ptr<ModuleData> &mod
                     OSFatal("Relocation is referencing a unknown section.");
                 }
 
-                auto relocationData = std::make_unique<RelocationData>(type,
-                                                                       offset - 0x02000000,
-                                                                       addend,
-                                                                       (void *) (destinations[section_index] + 0x02000000),
-                                                                       sym_name,
-                                                                       infoMap[sym_section_index]);
+                auto relocationData = make_unique_nothrow<RelocationData>(type,
+                                                                          offset - 0x02000000,
+                                                                          addend,
+                                                                          (void *) (destinations[section_index] + 0x02000000),
+                                                                          sym_name,
+                                                                          infoMap[sym_section_index]);
 
                 if (!relocationData) {
                     DEBUG_FUNCTION_LINE_ERR("Failed to alloc relocation data");
-                    OSFatal("Failed to alloc relocation data");
-                    continue;
+                    return false;
                 }
 
                 moduleData->addRelocationData(std::move(relocationData));
             }
         }
     }
+    return true;
 }
 
 bool ModuleDataFactory::linkSection(elfio &reader, uint32_t section_index, uint32_t destination, uint32_t base_text, uint32_t base_data, relocation_trampoline_entry_t *trampoline_data,
@@ -386,8 +399,7 @@ bool ModuleDataFactory::linkSection(elfio &reader, uint32_t section_index, uint3
 
                 if (!rel.get_entry(j, offset, sym_value, sym_name, type, addend, sym_section_index)) {
                     DEBUG_FUNCTION_LINE_ERR("Failed to get relocation");
-                    OSFatal("Failed to get relocation");
-                    break;
+                    return false;
                 }
 
                 auto adjusted_sym_value = (uint32_t) sym_value;

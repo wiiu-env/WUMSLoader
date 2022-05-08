@@ -244,11 +244,15 @@ class section_impl : public section
             if ( ( 0 != size ) && ( 0 != data ) ) {
                 stream.seekg( (*convertor)( header.sh_offset ) );
                 if (get_flags() & 0x08000000){
-                    uint32_t uncompressed_size = size;
-                    stream.read( (char *) &uncompressed_size, 4);
+                    uint32_t decompressed_size = size;
+                    stream.read( (char *) &decompressed_size, 4);
                     stream.read( data, size - 4);
 
-                    char* uncompressedData = new char[uncompressed_size + 1];
+                    char* decompressedData = new (std::nothrow) char[decompressed_size + 1];
+                    if(!decompressedData) {
+                        DEBUG_FUNCTION_LINE_ERR("Failed to allocated memory for decompressing the section");
+                        OSFatal("Failed to allocated memory for decompressing the section");
+                    }
 
                     int ret = 0;
                     z_stream s;
@@ -265,8 +269,8 @@ class section_impl : public section
                     s.avail_in = size - 4;
                     s.next_in = (Bytef *)data;
 
-                    s.avail_out = uncompressed_size;
-                    s.next_out = (Bytef *)&uncompressedData[0];
+                    s.avail_out = decompressed_size;
+                    s.next_out = (Bytef *)&decompressedData[0];
 
                     ret = inflate(&s, Z_FINISH);
                     if (ret != Z_OK && ret != Z_STREAM_END){
@@ -276,9 +280,9 @@ class section_impl : public section
                     inflateEnd(&s);
 
                     delete [] data;
-                    data = uncompressedData;
-                    data_size = uncompressed_size;
-                    set_size(uncompressed_size);
+                    data = decompressedData;
+                    data_size = decompressed_size;
+                    set_size(decompressed_size);
                     data[data_size] = 0; // Ensure data is ended with 0 to avoid oob read
 
                 }else{
