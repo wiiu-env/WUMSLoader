@@ -15,6 +15,7 @@ IMPORT(MEMFreeToExpHeap);
 IMPORT(MEMAllocFromExpHeapEx);
 IMPORT(MEMGetAllocatableSizeForExpHeapEx);
 IMPORT(MEMCreateExpHeapEx);
+IMPORT(OSGetUPID);
 IMPORT(OSUninterruptibleSpinLock_Acquire);
 IMPORT(OSUninterruptibleSpinLock_Release);
 IMPORT(OSReport);

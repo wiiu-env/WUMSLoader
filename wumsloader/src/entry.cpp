@@ -20,6 +20,7 @@ std::vector<std::shared_ptr<ModuleData>> OrderModulesByDependencies(const std::v
 // The compiler tries to optimize this otherwise and calling the main function earlier
 extern "C" int _start(int argc, char **argv) {
     InitFunctionPointers();
+
     static uint8_t ucSetupRequired = 1;
     if (ucSetupRequired) {
         gHeapHandle = MEMCreateExpHeapEx((void *) (MEMORY_REGION_USABLE_HEAP_START), MEMORY_REGION_USABLE_HEAP_END - MEMORY_REGION_USABLE_HEAP_START, 1);
@@ -31,7 +32,10 @@ extern "C" int _start(int argc, char **argv) {
         ucSetupRequired = 0;
     }
 
-    doStart(argc, argv);
+    uint32_t upid = OSGetUPID();
+    if (upid == 2 || upid == 15) {
+        doStart(argc, argv);
+    }
 
     return ((int (*)(int, char **))(*(unsigned int *) 0x1005E040))(argc, argv);
 }
