@@ -1,9 +1,10 @@
 #include "ModuleDataPersistence.h"
 #include "globals.h"
+#include "utils/utils.h"
 #include <coreinit/cache.h>
 
 bool ModuleDataPersistence::saveModuleData(module_information_t *moduleInformation, const std::vector<std::shared_ptr<ModuleData>> &moduleList) {
-    auto module_data_list = std::make_unique<module_information_single_t[]>(moduleList.size());
+    auto module_data_list = make_unique_nothrow<module_information_single_t[]>(moduleList.size());
     if (!module_data_list) {
         DEBUG_FUNCTION_LINE_ERR("Failed to alloc memory to persist module data");
         return false;
@@ -73,7 +74,7 @@ bool ModuleDataPersistence::saveModuleData(module_information_single_t &module_d
 
 bool ModuleDataPersistence::saveFunctionSymbolDataForModule(module_information_single_t &module_data, const std::shared_ptr<ModuleData> &module) {
     uint32_t entryCount       = module->getFunctionSymbolDataList().size();
-    auto function_symbol_data = std::make_unique<module_function_symbol_data_t[]>(entryCount);
+    auto function_symbol_data = make_unique_nothrow<module_function_symbol_data_t[]>(entryCount);
     if (!function_symbol_data) {
         DEBUG_FUNCTION_LINE_ERR("Failed to allocate memory for the function symbol data.");
         return false;
@@ -98,7 +99,7 @@ bool ModuleDataPersistence::saveFunctionSymbolDataForModule(module_information_s
 }
 
 bool ModuleDataPersistence::saveExportDataForModule(module_information_single_t &module_data, const std::shared_ptr<ModuleData> &module) {
-    auto export_data = std::make_unique<export_data_t[]>(module->getExportDataList().size());
+    auto export_data = make_unique_nothrow<export_data_t[]>(module->getExportDataList().size());
     if (!export_data) {
         DEBUG_FUNCTION_LINE_ERR("Failed to allocate memory for the export data.");
         return false;
@@ -124,7 +125,7 @@ bool ModuleDataPersistence::saveExportDataForModule(module_information_single_t 
 }
 
 bool ModuleDataPersistence::saveHookDataForModule(module_information_single_t &module_data, const std::shared_ptr<ModuleData> &module) {
-    auto hook_data = std::make_unique<hook_data_t[]>(module->getHookDataList().size());
+    auto hook_data = make_unique_nothrow<hook_data_t[]>(module->getHookDataList().size());
     if (!hook_data) {
         DEBUG_FUNCTION_LINE_ERR("Failed to allocate memory for the hook data.");
         return false;
@@ -149,7 +150,7 @@ bool ModuleDataPersistence::saveHookDataForModule(module_information_single_t &m
 }
 
 bool ModuleDataPersistence::saveRelocationDataForModule(module_information_single_t &module_data, const std::shared_ptr<ModuleData> &module) {
-    auto relocation_data = std::make_unique<dyn_linking_relocation_entry_t[]>(module->getRelocationDataList().size());
+    auto relocation_data = make_unique_nothrow<dyn_linking_relocation_entry_t[]>(module->getRelocationDataList().size());
     if (!relocation_data) {
         DEBUG_FUNCTION_LINE_ERR("Failed to allocate memory for the relocation data.");
         return false;
@@ -164,7 +165,7 @@ bool ModuleDataPersistence::saveRelocationDataForModule(module_information_singl
     uint32_t rplInfoTotalCount = rplInfoCountSet.size();
     rplInfoCountSet.clear();
 
-    auto rpl_data = std::make_unique<dyn_linking_import_t[]>(rplInfoTotalCount);
+    auto rpl_data = make_unique_nothrow<dyn_linking_import_t[]>(rplInfoTotalCount);
     if (!rpl_data) {
         DEBUG_FUNCTION_LINE_ERR("Failed to allocate memory for the RPLInfos.");
         return false;

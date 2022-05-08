@@ -37,5 +37,5 @@ public:
                             relocation_trampoline_entry_t *trampoline_data,
                             uint32_t trampoline_data_length);
 
-    static void getImportRelocationData(std::shared_ptr<ModuleData> &moduleData, ELFIO::elfio &reader, uint8_t **destinations);
+    static bool getImportRelocationData(std::shared_ptr<ModuleData> &moduleData, ELFIO::elfio &reader, uint8_t **destinations);
 };
