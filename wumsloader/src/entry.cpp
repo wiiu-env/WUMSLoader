@@ -43,7 +43,11 @@ void doStart(int argc, char **argv) {
     if (!gInitCalled) {
         gInitCalled = 1;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overread"
         std::string basePath = ENVRIONMENT_STRING;
+#pragma GCC diagnostic pop
+
         DEBUG_FUNCTION_LINE("We need to load the modules. basePath %s", basePath.c_str());
         DirList modules(basePath + "/modules", ".wms", DirList::Files, 1);
         modules.SortList();
