@@ -18,6 +18,7 @@
 #include "ModuleDataFactory.h"
 #include "fs/FileUtils.h"
 #include "utils/ElfUtils.h"
+#include "utils/OnLeavingScope.h"
 #include "utils/logger.h"
 #include <coreinit/cache.h>
 #include <coreinit/memdefaultheap.h>
@@ -42,10 +43,11 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
         return {};
     }
 
+    auto cleanupBuffer = onLeavingScope([buffer]() { MEMFreeToDefaultHeap(buffer); });
+
     // Load ELF data
     if (!reader.load(reinterpret_cast<char *>(buffer), fsize)) {
         DEBUG_FUNCTION_LINE_ERR("Can't find or process %s", path.c_str());
-        MEMFreeToDefaultHeap(buffer);
         return {};
     }
     uint32_t sec_num = reader.sections.size();
@@ -53,7 +55,6 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
     auto destinations = std::make_unique<uint8_t *[]>(sec_num);
     if (!destinations) {
         DEBUG_FUNCTION_LINE_ERR("Failed alloc memory for destinations array");
-        MEMFreeToDefaultHeap(buffer);
         return {};
     }
 
@@ -85,7 +86,6 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
     auto data = std::make_unique<uint8_t[]>(text_size + data_size);
     if (!data) {
         DEBUG_FUNCTION_LINE_ERR("Failed to alloc memory for the .text section (%d bytes)", text_size);
-        MEMFreeToDefaultHeap(buffer);
         return {};
     }
 
@@ -125,7 +125,6 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                 destinations[psec->get_index()] -= 0xC0000000;
             } else {
                 DEBUG_FUNCTION_LINE_ERR("Unhandled case");
-                MEMFreeToDefaultHeap(buffer);
                 return std::nullopt;
             }
 
@@ -162,7 +161,6 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
             DEBUG_FUNCTION_LINE("Linking (%d)... %s", i, psec->get_name().c_str());
             if (!linkSection(reader, psec->get_index(), (uint32_t) destinations[psec->get_index()], (uint32_t) text_data, (uint32_t) data_data, nullptr, 0)) {
                 DEBUG_FUNCTION_LINE_ERR("elfLink failed");
-                MEMFreeToDefaultHeap(buffer);
                 return std::nullopt;
             }
         }
@@ -240,7 +238,6 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                     } else if (key == "wums") {
                         if (value != "0.3") {
                             DEBUG_FUNCTION_LINE_ERR("Warning: Ignoring module - Unsupported WUMS version: %s.", value.c_str());
-                            MEMFreeToDefaultHeap(buffer);
                             return std::nullopt;
                         }
                     }
@@ -306,8 +303,6 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
     DEBUG_FUNCTION_LINE("Saved endAddress as %08X", (uint32_t) data.get() + totalSize);
 
     DEBUG_FUNCTION_LINE("Loaded %s size: %d kilobytes", path.c_str(), totalSize / 1024);
-
-    MEMFreeToDefaultHeap(buffer);
 
     return moduleData;
 }
