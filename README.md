@@ -10,6 +10,17 @@ Put modules (in form of `.wms` files) that should be used a main()-hook into `fs
 
 The area between `0x00809000` and `0x00FFF000` will be used.
 
+## Buildflags
+
+### Logging
+Building via `make` only logs errors (via OSReport). To enable logging via the [LoggingModule](https://github.com/wiiu-env/LoggingModule) set `DEBUG` to `1` or `VERBOSE`.
+
+`make` Logs errors only (via OSReport).  
+`make DEBUG=1` Enables information and error logging via [LoggingModule](https://github.com/wiiu-env/LoggingModule).  
+`make DEBUG=VERBOSE` Enables verbose information and error logging via [LoggingModule](https://github.com/wiiu-env/LoggingModule).
+
+If the [LoggingModule](https://github.com/wiiu-env/LoggingModule) is not present, it'll fallback to UDP (Port 4405) and [CafeOS](https://github.com/wiiu-env/USBSerialLoggingModule) logging.
+
 ## Building
 Make you to have [wut](https://github.com/devkitPro/wut/) and [WiiUModuleSystem](https://github.com/wiiu-env/WiiUModuleSystem) installed and use the following command for build:
 ```
