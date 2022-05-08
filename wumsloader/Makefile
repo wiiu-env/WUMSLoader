@@ -47,7 +47,7 @@ INCLUDES	:=  src
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-CFLAGS	:=  -g -Wall -O0 -ffunction-sections $(MACHDEP) $(INCLUDE) -D__WIIU__ -D__WUT__
+CFLAGS	:=  -g -Wall -O2 -ffunction-sections $(MACHDEP) $(INCLUDE) -D__WIIU__ -D__WUT__
 CXXFLAGS := $(CFLAGS) -std=c++20 -fno-exceptions -fno-rtti
 ASFLAGS	:= -mregnames
 LDFLAGS	:= -Wl,--gc-sections,--allow-multiple-definition
