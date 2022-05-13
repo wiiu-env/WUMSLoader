@@ -122,8 +122,8 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                 destination -= 0x10000000;
                 destinations[psec->get_index()] -= 0x10000000;
             } else if (address >= 0xC0000000) {
-                destination -= 0xC0000000;
-                destinations[psec->get_index()] -= 0xC0000000;
+                DEBUG_FUNCTION_LINE_ERR("Loading section from 0xC0000000 is NOT supported");
+                return std::nullopt;
             } else {
                 DEBUG_FUNCTION_LINE_ERR("Unhandled case");
                 return std::nullopt;
