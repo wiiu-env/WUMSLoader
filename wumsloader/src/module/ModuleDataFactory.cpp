@@ -304,11 +304,12 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
         return std::nullopt;
     }
 
-    moduleData->setDataPtr(std::move(data), totalSize);
-    moduleData->setEntrypoint(entrypoint);
     DEBUG_FUNCTION_LINE("Saved entrypoint as %08X", entrypoint);
     DEBUG_FUNCTION_LINE("Saved startAddress as %08X", (uint32_t) data.get());
     DEBUG_FUNCTION_LINE("Saved endAddress as %08X", (uint32_t) data.get() + totalSize);
+
+    moduleData->setEntrypoint(entrypoint);
+    moduleData->setDataPtr(std::move(data), totalSize);
 
     DEBUG_FUNCTION_LINE("Loaded %s size: %d kilobytes", path.c_str(), totalSize / 1024);
 
