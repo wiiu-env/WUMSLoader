@@ -100,7 +100,7 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
 
     for (uint32_t i = 0; i < sec_num; ++i) {
         section *psec = reader.sections[i];
-        if (psec->get_type() == 0x80000002) {
+        if (psec->get_type() == 0x80000002 || psec->get_name() == ".wut_load_bounds") {
             continue;
         }
 
