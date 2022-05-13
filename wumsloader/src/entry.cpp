@@ -157,7 +157,7 @@ std::vector<std::shared_ptr<ModuleData>> OrderModulesByDependencies(const std::v
                 continue;
             }
             canBreak = false;
-            DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s", curModule->getExportName());
+            DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s", curModule->getExportName().c_str());
             std::vector<std::string_view> importsFromOtherModules;
             for (const auto &curReloc : curModule->getRelocationDataList()) {
                 std::string_view curRPL = curReloc->getImportRPLInformation()->getRPLName();
@@ -166,7 +166,7 @@ std::vector<std::shared_ptr<ModuleData>> OrderModulesByDependencies(const std::v
                 }
                 if (curRPL.starts_with("homebrew")) {
                     if (std::find(importsFromOtherModules.begin(), importsFromOtherModules.end(), curRPL) == importsFromOtherModules.end()) {
-                        DEBUG_FUNCTION_LINE_VERBOSE("%s is importing from %s", curModule->getExportName(), curRPL.begin());
+                        DEBUG_FUNCTION_LINE_VERBOSE("%s is importing from %s", curModule->getExportName().c_str(), curRPL.begin());
                         importsFromOtherModules.push_back(curRPL);
                     }
                 }
@@ -181,7 +181,7 @@ std::vector<std::shared_ptr<ModuleData>> OrderModulesByDependencies(const std::v
             }
             if (canLoad) {
                 weDidSomething = true;
-                DEBUG_FUNCTION_LINE_VERBOSE("We can load: %s", curModule->getExportName());
+                DEBUG_FUNCTION_LINE_VERBOSE("We can load: %s", curModule->getExportName().c_str());
                 finalOrder.push_back(curModule);
                 loadedModulesExportNames.emplace_back(curModule->getExportName());
                 loadedModulesEntrypoints.push_back(curModule->getEntrypoint());
