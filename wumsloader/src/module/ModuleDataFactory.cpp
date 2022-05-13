@@ -131,6 +131,11 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
 
             const char *p = reader.sections[i]->get_data();
 
+            if (destination + sectionSize > (uint32_t) data.get() + text_size + data_size) {
+                DEBUG_FUNCTION_LINE_ERR("Tried to overflow buffer. %08X > %08X", destination + sectionSize, (uint32_t) data.get() + text_size + data_size);
+                OSFatal("WUMSLoader: Tried to overflow buffer");
+            }
+
             if (psec->get_type() == SHT_NOBITS) {
                 DEBUG_FUNCTION_LINE("memset section %s %08X to 0 (%d bytes)", psec->get_name().c_str(), destination, sectionSize);
                 memset((void *) destination, 0, sectionSize);
