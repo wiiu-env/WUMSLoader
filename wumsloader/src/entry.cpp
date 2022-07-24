@@ -41,7 +41,7 @@ extern "C" int _start(int argc, char **argv) {
 }
 
 void doStart(int argc, char **argv) {
-    __init_wut();
+    init_wut();
     initLogging();
 
     if (!gInitCalled) {
@@ -130,7 +130,7 @@ void doStart(int argc, char **argv) {
     CallHook(gLoadedModules, WUMS_HOOK_APPLICATION_STARTS);
 
     deinitLogging();
-    __fini_wut();
+    fini_wut();
 }
 
 void CallInitHooksForModule(const std::shared_ptr<ModuleData> &curModule) {

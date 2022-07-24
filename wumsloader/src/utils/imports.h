@@ -33,6 +33,7 @@ IMPORT(OSWaitCond);
 IMPORT(OSSignalCond);
 IMPORT(MEMAllocFromDefaultHeapEx);
 IMPORT(MEMFreeToDefaultHeap);
+IMPORT(OSSwapAtomic);
 
 IMPORT(FSTimeToCalendarTime);
 IMPORT(FSInit);
@@ -46,6 +47,7 @@ IMPORT(FSGetFreeSpaceSize);
 IMPORT(FSGetStat);
 IMPORT(FSRemove);
 IMPORT(FSOpenFile);
+IMPORT(FSOpenFileEx);
 IMPORT(FSCloseFile);
 IMPORT(FSOpenDir);
 IMPORT(FSMakeDir);
