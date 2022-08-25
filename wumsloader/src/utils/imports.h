@@ -68,6 +68,34 @@ IMPORT(FSChangeMode);
 IMPORT(FSGetPosFile);
 IMPORT(OSTicksToCalendarTime);
 IMPORT(__rplwrap_exit);
+IMPORT(OSInitMutexEx);
+
+IMPORT(FSAMakeDir);
+IMPORT(FSAInit);
+IMPORT(FSAAddClient);
+IMPORT(FSARewindDir);
+IMPORT(FSAMount);
+IMPORT(FSAGetDeviceInfo);
+IMPORT(FSARename);
+IMPORT(FSAChangeDir);
+IMPORT(FSAUnmount);
+IMPORT(FSADelClient);
+IMPORT(FSAChangeMode);
+IMPORT(FSAReadDir);
+IMPORT(FSAOpenDir);
+IMPORT(FSACloseDir);
+IMPORT(FSAFlushFile);
+IMPORT(FSAOpenFileEx);
+IMPORT(FSACloseFile);
+IMPORT(FSAGetStatFile);
+IMPORT(FSAGetFreeSpaceSize);
+IMPORT(FSASetPosFile);
+IMPORT(FSATruncateFile);
+IMPORT(FSARemove);
+IMPORT(FSAReadFile);
+IMPORT(FSAWriteFile);
+IMPORT(FSAGetStat);
+IMPORT(FSAGetStatusStr);
 
 IMPORT_END();
 
