@@ -81,11 +81,11 @@ void doStart(int argc, char **argv) {
             gLoadedModules.push_back(module);
         }
 
-        bool applicationEndHookLoaded = false;
+        bool aromaBaseModuleLoaded = false;
         for (auto &curModule : gLoadedModules) {
-            if (std::string_view(curModule->getExportName()) == "homebrew_applicationendshook") {
-                DEBUG_FUNCTION_LINE_VERBOSE("We have ApplicationEndsHook Module!");
-                applicationEndHookLoaded = true;
+            if (std::string_view(curModule->getExportName()) == "homebrew_basemodule") {
+                DEBUG_FUNCTION_LINE_VERBOSE("We have AromaBaseModule!");
+                aromaBaseModuleLoaded = true;
                 break;
             }
         }
@@ -94,9 +94,9 @@ void doStart(int argc, char **argv) {
         for (auto &curModule : gLoadedModules) {
             for (auto &curHook : curModule->getHookDataList()) {
                 if (curHook->getType() == WUMS_HOOK_APPLICATION_ENDS || curHook->getType() == WUMS_HOOK_FINI_WUT_DEVOPTAB) {
-                    if (!applicationEndHookLoaded) {
-                        DEBUG_FUNCTION_LINE_ERR("%s requires module homebrew_applicationendshook", curModule->getExportName().c_str());
-                        OSFatal("module requires module homebrew_applicationendshook");
+                    if (!aromaBaseModuleLoaded) {
+                        DEBUG_FUNCTION_LINE_ERR("%s requires module homebrew_basemodule", curModule->getExportName().c_str());
+                        OSFatal("module requires module homebrew_basemodule");
                     }
                 }
             }
