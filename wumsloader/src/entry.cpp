@@ -56,6 +56,11 @@ void doStart(int argc, char **argv) {
         DirList modules(basePath + "/modules", ".wms", DirList::Files, 1);
         modules.SortList();
         for (int i = 0; i < modules.GetFilecount(); i++) {
+            std::string_view asView(modules.GetFilename(i));
+            if (asView.starts_with('.') || asView.starts_with('_')) {
+                DEBUG_FUNCTION_LINE_WARN("Skip file %s", modules.GetFilename(i));
+                continue;
+            }
             DEBUG_FUNCTION_LINE("Loading module %s", modules.GetFilepath(i));
             auto moduleData = ModuleDataFactory::load(modules.GetFilepath(i));
             if (moduleData) {
