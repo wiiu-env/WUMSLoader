@@ -34,6 +34,8 @@ IMPORT(OSSignalCond);
 IMPORT(MEMAllocFromDefaultHeapEx);
 IMPORT(MEMFreeToDefaultHeap);
 IMPORT(OSSwapAtomic);
+IMPORT(OSDynLoad_GetAllocator);
+IMPORT(OSDynLoad_SetAllocator);
 
 IMPORT(FSTimeToCalendarTime);
 IMPORT(FSInit);

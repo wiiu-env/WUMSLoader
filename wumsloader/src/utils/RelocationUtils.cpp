@@ -1,12 +1,41 @@
 #include "RelocationUtils.h"
 #include "globals.h"
+#include "malloc.h"
 #include "utils/ElfUtils.h"
 #include "utils/memory.h"
 #include <coreinit/cache.h>
 #include <coreinit/dynload.h>
 
+static OSDynLoad_Error CustomDynLoadAlloc(int32_t size, int32_t align, void **outAddr) {
+    if (!outAddr) {
+        return OS_DYNLOAD_INVALID_ALLOCATOR_PTR;
+    }
+
+    if (align >= 0 && align < 4) {
+        align = 4;
+    } else if (align < 0 && align > -4) {
+        align = -4;
+    }
+
+    if (!(*outAddr = memalign(align, size))) {
+        return OS_DYNLOAD_OUT_OF_MEMORY;
+    }
+
+    return OS_DYNLOAD_OK;
+}
+
+static void CustomDynLoadFree(void *addr) {
+    free(addr);
+}
+
 bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules, bool skipMemoryMappingModule) {
     bool wasSuccessful = true;
+
+    OSDynLoadAllocFn prevDynLoadAlloc = nullptr;
+    OSDynLoadFreeFn prevDynLoadFree   = nullptr;
+
+    OSDynLoad_GetAllocator(&prevDynLoadAlloc, &prevDynLoadFree);
+    OSDynLoad_SetAllocator(CustomDynLoadAlloc, CustomDynLoadFree);
 
     for (auto &curModule : loadedModules) {
         DEBUG_FUNCTION_LINE("Let's do the relocations for %s", curModule->getExportName().c_str());
@@ -25,6 +54,8 @@ bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules,
             OSFatal("Failed to do Reloations");
         }
     }
+    OSDynLoad_SetAllocator(prevDynLoadAlloc, prevDynLoadFree);
+
     DCFlushRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
     ICInvalidateRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
     return wasSuccessful;
