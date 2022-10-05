@@ -112,9 +112,13 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
             if (!usedRPls.contains(rplName)) {
                 DEBUG_FUNCTION_LINE_VERBOSE("Acquire %s", rplName.c_str());
                 // Always acquire to increase refcount and make sure it won't get unloaded while we're using it.
-                OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+                OSDynLoad_Error err = OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+                if (err != OS_DYNLOAD_OK) {
+                    DEBUG_FUNCTION_LINE_ERR("Failed to acquire %s", rplName.c_str());
+                    return false;
+                }
                 // Keep track RPLs we are using.
-                // They will be released on exit in the AromaBaseModule
+                // They will be released on exit (See: AromaBaseModule)
                 usedRPls[rplName] = rplHandle;
             } else {
                 DEBUG_FUNCTION_LINE_VERBOSE("Use from usedRPLs cache! %s", rplName.c_str());
