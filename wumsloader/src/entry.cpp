@@ -41,19 +41,19 @@ extern "C" int _start(int argc, char **argv) {
 }
 
 void SaveLoadedRPLsInGlobalInformation(module_information_t *globalInformation,
-                                       std::vector<OSDynLoad_Module> loadedRPLs) {
+                                       std::map<std::string, OSDynLoad_Module> &usedRPls) {
     // free previous allocations.
     if (globalInformation->acquired_rpls) {
         free(globalInformation->acquired_rpls);
     }
-    globalInformation->number_acquired_rpls = loadedRPLs.size();
-    globalInformation->acquired_rpls        = (uint32_t *) malloc(loadedRPLs.size() * sizeof(uint32_t));
+    globalInformation->number_acquired_rpls = usedRPls.size();
+    globalInformation->acquired_rpls        = (uint32_t *) malloc(usedRPls.size() * sizeof(uint32_t));
     if (!globalInformation->acquired_rpls) {
         OSFatal("Failed to allocate memory");
     }
     uint32_t i = 0;
-    for (auto &rpl : loadedRPLs) {
-        globalInformation->acquired_rpls[i] = (uint32_t) rpl;
+    for (auto &rpl : usedRPls) {
+        globalInformation->acquired_rpls[i] = (uint32_t) rpl.second;
         ++i;
     }
 }
@@ -62,7 +62,7 @@ void doStart(int argc, char **argv) {
     init_wut();
     initLogging();
 
-    gLoadedRPLs.clear();
+    gUsedRPLs.clear();
     // If an allocated rpl was not released properly (e.g. if something else calls OSDynload_Acquire without releasing it)
     // memory gets leaked. Let's clean this up!
     for (auto &addr : gAllocatedAddresses) {
@@ -135,7 +135,7 @@ void doStart(int argc, char **argv) {
         }
 
         DEBUG_FUNCTION_LINE_VERBOSE("Resolve relocations without replacing alloc functions");
-        ResolveRelocations(gLoadedModules, true, gLoadedRPLs);
+        ResolveRelocations(gLoadedModules, true, gUsedRPLs);
 
         for (auto &curModule : gLoadedModules) {
             if (curModule->isInitBeforeRelocationDoneHook()) {
@@ -153,11 +153,11 @@ void doStart(int argc, char **argv) {
         }
     } else {
         DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions");
-        ResolveRelocations(gLoadedModules, false, gLoadedRPLs);
+        ResolveRelocations(gLoadedModules, false, gUsedRPLs);
         CallHook(gLoadedModules, WUMS_HOOK_RELOCATIONS_DONE);
     }
 
-    SaveLoadedRPLsInGlobalInformation(&gModuleInformation, gLoadedRPLs);
+    SaveLoadedRPLsInGlobalInformation(&gModuleInformation, gUsedRPLs);
 
     CallHook(gLoadedModules, WUMS_HOOK_INIT_WUT_DEVOPTAB);
     CallHook(gLoadedModules, WUMS_HOOK_INIT_WUT_SOCKETS);
