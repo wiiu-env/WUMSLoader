@@ -1,10 +1,13 @@
 #include "RelocationUtils.h"
+#include "ElfUtils.h"
 #include "globals.h"
-#include "malloc.h"
-#include "utils/ElfUtils.h"
-#include "utils/memory.h"
+#include "memory.h"
+#include <algorithm>
 #include <coreinit/cache.h>
-#include <coreinit/dynload.h>
+#include <iostream>
+#include <iterator>
+#include <malloc.h>
+#include <vector>
 
 static OSDynLoad_Error CustomDynLoadAlloc(int32_t size, int32_t align, void **outAddr) {
     if (!outAddr) {
@@ -21,14 +24,23 @@ static OSDynLoad_Error CustomDynLoadAlloc(int32_t size, int32_t align, void **ou
         return OS_DYNLOAD_OUT_OF_MEMORY;
     }
 
+    // keep track of allocated memory to clean it up in case the RPLs won't get unloaded properly
+    gAllocatedAddresses.push_back(*outAddr);
+
     return OS_DYNLOAD_OK;
 }
 
 static void CustomDynLoadFree(void *addr) {
     free(addr);
+
+    // Remove from list
+    auto it = std::find(gAllocatedAddresses.begin(), gAllocatedAddresses.end(), addr);
+    if (it != gAllocatedAddresses.end()) {
+        gAllocatedAddresses.erase(it);
+    }
 }
 
-bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules, bool skipMemoryMappingModule) {
+bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules, bool skipMemoryMappingModule, std::vector<OSDynLoad_Module> &loadedRPLs) {
     bool wasSuccessful = true;
 
     OSDynLoadAllocFn prevDynLoadAlloc = nullptr;
@@ -48,10 +60,10 @@ bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules,
         // Afterwards we can just rely on the custom heap.
         bool skipAllocFunction = skipMemoryMappingModule && (std::string_view(curModule->getExportName()) == "homebrew_memorymapping");
         DEBUG_FUNCTION_LINE_VERBOSE("Skip alloc replace? %d", skipAllocFunction);
-        if (!doRelocation(gLoadedModules, relocData, nullptr, 0, skipAllocFunction)) {
+        if (!doRelocation(gLoadedModules, relocData, nullptr, 0, skipAllocFunction, loadedRPLs)) {
             wasSuccessful = false;
             DEBUG_FUNCTION_LINE_ERR("Failed to do Relocations for %s", curModule->getExportName().c_str());
-            OSFatal("Failed to do Reloations");
+            OSFatal("Failed to do Relocations");
         }
     }
     OSDynLoad_SetAllocator(prevDynLoadAlloc, prevDynLoadFree);
@@ -66,7 +78,8 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
                   const std::vector<std::unique_ptr<RelocationData>> &relocData,
                   relocation_trampoline_entry_t *tramp_data,
                   uint32_t tramp_length,
-                  bool skipAllocReplacement) {
+                  bool skipAllocReplacement,
+                  std::vector<OSDynLoad_Module> &loadedRPLs) {
     std::map<std::string, OSDynLoad_Module> moduleCache;
     for (auto const &curReloc : relocData) {
         auto &functionName       = curReloc->getName();
@@ -106,6 +119,8 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
                         DEBUG_FUNCTION_LINE_ERR("Failed to acquire %s", rplName.c_str());
                         return false;
                     }
+                    // Keep track RPLs we have acquired, they will be released on exit (see: AromaBaseModule)
+                    loadedRPLs.push_back(rplHandle);
                 }
                 moduleCache[rplName] = rplHandle;
             }

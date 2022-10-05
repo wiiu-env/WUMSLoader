@@ -1,6 +1,7 @@
 #pragma once
 
 #include "module/ModuleData.h"
+#include <coreinit/dynload.h>
 #include <coreinit/memheap.h>
 #include <cstdint>
 #include <memory>
@@ -10,6 +11,8 @@ extern MEMHeapHandle gHeapHandle;
 extern module_information_t gModuleInformation;
 extern std::vector<std::shared_ptr<ModuleData>> gLoadedModules;
 extern std::unique_ptr<module_information_single_t[]> gModuleDataInfo;
+extern std::vector<OSDynLoad_Module> gLoadedRPLs;
+extern std::vector<void *> gAllocatedAddresses;
 
 #define MEMORY_REGION_START                   0x00800000
 #define MEMORY_REGION_SIZE                    0x00800000
