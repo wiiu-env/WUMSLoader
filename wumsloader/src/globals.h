@@ -11,7 +11,7 @@ extern MEMHeapHandle gHeapHandle;
 extern module_information_t gModuleInformation;
 extern std::vector<std::shared_ptr<ModuleData>> gLoadedModules;
 extern std::unique_ptr<module_information_single_t[]> gModuleDataInfo;
-extern std::vector<OSDynLoad_Module> gLoadedRPLs;
+extern std::map<std::string, OSDynLoad_Module> gUsedRPLs;
 extern std::vector<void *> gAllocatedAddresses;
 
 #define MEMORY_REGION_START                   0x00800000

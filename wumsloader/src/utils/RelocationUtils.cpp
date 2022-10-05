@@ -40,7 +40,7 @@ static void CustomDynLoadFree(void *addr) {
     }
 }
 
-bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules, bool skipMemoryMappingModule, std::vector<OSDynLoad_Module> &loadedRPLs) {
+bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules, bool skipMemoryMappingModule, std::map<std::string, OSDynLoad_Module> &usedRPls) {
     bool wasSuccessful = true;
 
     OSDynLoadAllocFn prevDynLoadAlloc = nullptr;
@@ -60,7 +60,7 @@ bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules,
         // Afterwards we can just rely on the custom heap.
         bool skipAllocFunction = skipMemoryMappingModule && (std::string_view(curModule->getExportName()) == "homebrew_memorymapping");
         DEBUG_FUNCTION_LINE_VERBOSE("Skip alloc replace? %d", skipAllocFunction);
-        if (!doRelocation(gLoadedModules, relocData, nullptr, 0, skipAllocFunction, loadedRPLs)) {
+        if (!doRelocation(gLoadedModules, relocData, nullptr, 0, skipAllocFunction, usedRPls)) {
             wasSuccessful = false;
             DEBUG_FUNCTION_LINE_ERR("Failed to do Relocations for %s", curModule->getExportName().c_str());
             OSFatal("Failed to do Relocations");
@@ -79,8 +79,7 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
                   relocation_trampoline_entry_t *tramp_data,
                   uint32_t tramp_length,
                   bool skipAllocReplacement,
-                  std::vector<OSDynLoad_Module> &loadedRPLs) {
-    std::map<std::string, OSDynLoad_Module> moduleCache;
+                  std::map<std::string, OSDynLoad_Module> &usedRPls) {
     for (auto const &curReloc : relocData) {
         auto &functionName       = curReloc->getName();
         std::string rplName      = curReloc->getImportRPLInformation()->getRPLName();
@@ -109,26 +108,22 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
         if (functionAddress == 0) {
             int32_t isData             = curReloc->getImportRPLInformation()->isData();
             OSDynLoad_Module rplHandle = nullptr;
-            if (moduleCache.count(rplName) == 0) {
-                OSDynLoad_Error err = OSDynLoad_IsModuleLoaded(rplName.c_str(), &rplHandle);
-                if (err != OS_DYNLOAD_OK || rplHandle == nullptr) {
-                    DEBUG_FUNCTION_LINE_VERBOSE("%s is not yet loaded", rplName.c_str());
-                    // only acquire if not already loaded.
-                    err = OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
-                    if (err != OS_DYNLOAD_OK) {
-                        DEBUG_FUNCTION_LINE_ERR("Failed to acquire %s", rplName.c_str());
-                        return false;
-                    }
-                    // Keep track RPLs we have acquired, they will be released on exit (see: AromaBaseModule)
-                    loadedRPLs.push_back(rplHandle);
-                }
-                moduleCache[rplName] = rplHandle;
+
+            if (!usedRPls.contains(rplName)) {
+                DEBUG_FUNCTION_LINE_VERBOSE("Acquire %s", rplName.c_str());
+                // Always acquire to increase refcount and make sure it won't get unloaded while we're using it.
+                OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
+                // Keep track RPLs we are using.
+                // They will be released on exit in the AromaBaseModule
+                usedRPls[rplName] = rplHandle;
+            } else {
+                DEBUG_FUNCTION_LINE_VERBOSE("Use from usedRPLs cache! %s", rplName.c_str());
             }
-            rplHandle = moduleCache.at(rplName);
+            rplHandle = usedRPls[rplName];
 
             OSDynLoad_FindExport(rplHandle, isData, functionName.c_str(), (void **) &functionAddress);
             if (functionAddress == 0) {
-                DEBUG_FUNCTION_LINE_ERR("Failed to find export %s of %s", functionName.begin(), rplName.c_str());
+                DEBUG_FUNCTION_LINE_ERR("Failed to find export %s of %s", functionName.c_str(), rplName.c_str());
                 OSFatal("Failed to find export");
                 return false;
             }
