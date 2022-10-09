@@ -8,9 +8,12 @@
 #include "utils/dynamic.h"
 #include "utils/hooks.h"
 #include "utils/logger.h"
+#include "version.h"
 #include <coreinit/debug.h>
 #include <coreinit/memexpheap.h>
 #include <cstdint>
+
+#define VERSION "v0.1"
 
 void CallInitHooksForModule(const std::shared_ptr<ModuleData> &curModule);
 
@@ -61,6 +64,8 @@ void SaveLoadedRPLsInGlobalInformation(module_information_t *globalInformation,
 void doStart(int argc, char **argv) {
     init_wut();
     initLogging();
+
+    OSReport("Running WUMSLoader " VERSION VERSION_EXTRA "\n");
 
     gUsedRPLs.clear();
     // If an allocated rpl was not released properly (e.g. if something else calls OSDynload_Acquire without releasing it)
