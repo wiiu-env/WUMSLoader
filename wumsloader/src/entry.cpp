@@ -13,7 +13,7 @@
 #include <coreinit/memexpheap.h>
 #include <cstdint>
 
-#define VERSION "v0.1"
+#define VERSION "v0.2"
 
 void CallInitHooksForModule(const std::shared_ptr<ModuleData> &curModule);
 
