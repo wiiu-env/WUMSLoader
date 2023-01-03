@@ -87,10 +87,16 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
 
         for (auto &module : moduleList) {
             if (rplName == module->getExportName()) {
+                auto found = false;
                 for (auto &exportData : module->getExportDataList()) {
                     if (functionName == exportData->getName()) {
                         functionAddress = (uint32_t) exportData->getAddress();
+                        found           = true;
                     }
+                }
+                if (!found) {
+                    DEBUG_FUNCTION_LINE_ERR("Failed to find export %s of module: %s", functionName.c_str(), rplName.c_str());
+                    OSFatal("Failed to find export of module.");
                 }
             }
         }
