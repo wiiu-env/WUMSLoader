@@ -106,7 +106,8 @@ void doStart(int argc, char **argv) {
         gModuleInformation = {.version = MODULE_INFORMATION_VERSION};
         ModuleDataPersistence::saveModuleData(&gModuleInformation, gLoadedModules);
 
-        auto orderedModules = OrderModulesByDependencies(gLoadedModules);
+        // Order modules list by dependencies.
+        gLoadedModules = OrderModulesByDependencies(gLoadedModules);
 
         // make sure the plugin backend module is at the end.
         auto it = std::find_if(gLoadedModules.begin(),
