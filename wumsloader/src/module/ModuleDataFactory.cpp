@@ -213,7 +213,8 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
         }
     }
 
-    secInfo = moduleData->getSectionInfo(".wums.meta");
+    bool checkedVersion = false;
+    secInfo             = moduleData->getSectionInfo(".wums.meta");
     if (secInfo && secInfo.value()->getSize() > 0) {
         auto *entries = (wums_entry_t *) secInfo.value()->getAddress();
         if (entries != nullptr) {
@@ -248,6 +249,7 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                             moduleData->setInitBeforeRelocationDoneHook(false);
                         }
                     } else if (key == "wums" || key == "wum") {
+                        checkedVersion = true;
                         if (value != "0.3.1") {
                             DEBUG_FUNCTION_LINE_WARN("Ignoring module - Unsupported WUMS version: %s.", value.c_str());
                             return std::nullopt;
@@ -257,6 +259,10 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                 curEntry += strlen(curEntry) + 1;
             }
         }
+    }
+    if (!checkedVersion) {
+        DEBUG_FUNCTION_LINE_ERR("Failed to check version. Ignoring module.");
+        return {};
     }
 
     // Get the symbol for functions.
