@@ -19,6 +19,7 @@
 
 void CallInitHooksForModule(const std::shared_ptr<ModuleData> &curModule);
 
+bool CheckModulesByDependencies(const std::vector<std::shared_ptr<ModuleData>> &loadedModules);
 std::vector<std::shared_ptr<ModuleData>> OrderModulesByDependencies(const std::vector<std::shared_ptr<ModuleData>> &loadedModules);
 
 // We need to wrap it to make sure the main function is called AFTER our code.
@@ -170,6 +171,11 @@ void doStart(int argc, char **argv) {
             }
         }
 
+        // Check if dependencies are still resolved.
+        if (!CheckModulesByDependencies(gLoadedModules)) {
+            OSFatal("Module order is impossible");
+        }
+
 #ifdef VERBOSE_DEBUG
         DEBUG_FUNCTION_LINE_VERBOSE("Final order of modules");
         for (auto &curModule : gLoadedModules) {
@@ -218,6 +224,34 @@ void CallInitHooksForModule(const std::shared_ptr<ModuleData> &curModule) {
     CallHook(curModule, WUMS_HOOK_INIT_WUT_SOCKETS);
     CallHook(curModule, WUMS_HOOK_INIT_WRAPPER, !curModule->isSkipInitFini());
     CallHook(curModule, WUMS_HOOK_INIT);
+}
+
+bool CheckModulesByDependencies(const std::vector<std::shared_ptr<ModuleData>> &loadedModules) {
+    std::set<std::string> loaderModuleNames;
+
+    for (auto const &curModule : loadedModules) {
+        DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s", curModule->getExportName().c_str());
+        std::set<std::string> importsFromOtherModules;
+        for (const auto &curReloc : curModule->getRelocationDataList()) {
+            std::string curRPL = curReloc->getImportRPLInformation()->getRPLName();
+            if (curRPL == "homebrew_wupsbackend") {
+                OSFatal("Error: module depends on homebrew_wupsbackend, this is not supported");
+            }
+            if (curRPL.starts_with("homebrew")) {
+                importsFromOtherModules.insert(curRPL);
+            }
+        }
+        for (auto &curRPL : importsFromOtherModules) {
+            if (!loaderModuleNames.contains(curRPL)) {
+                DEBUG_FUNCTION_LINE_VERBOSE("%s requires %s which is not loaded yet", curModule->getExportName().c_str(), curRPL.c_str());
+                return false;
+            } else {
+                DEBUG_FUNCTION_LINE_VERBOSE("Used %s, but it's already loaded", curRPL.c_str());
+            }
+        }
+        loaderModuleNames.insert(curModule->getExportName());
+    }
+    return true;
 }
 
 std::vector<std::shared_ptr<ModuleData>> OrderModulesByDependencies(const std::vector<std::shared_ptr<ModuleData>> &loadedModules) {
