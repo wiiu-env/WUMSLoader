@@ -248,8 +248,8 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                             moduleData->setInitBeforeRelocationDoneHook(false);
                         }
                     } else if (key == "wums") {
-                        if (value != "0.3") {
-                            DEBUG_FUNCTION_LINE_ERR("Warning: Ignoring module - Unsupported WUMS version: %s.", value.c_str());
+                        if (value != "0.3.1") {
+                            DEBUG_FUNCTION_LINE_WARN("Ignoring module - Unsupported WUMS version: %s.", value.c_str());
                             return std::nullopt;
                         }
                     }
