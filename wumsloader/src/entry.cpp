@@ -8,10 +8,12 @@
 #include "utils/dynamic.h"
 #include "utils/hooks.h"
 #include "utils/logger.h"
+#include "utils/utils.h"
 #include "version.h"
 #include <coreinit/debug.h>
 #include <coreinit/memexpheap.h>
 #include <cstdint>
+#include <list>
 
 #define VERSION "v0.2"
 
@@ -128,7 +130,7 @@ void doStart(int argc, char **argv) {
             }
         }
 
-        // Make sure WUMS_HOOK_APPLICATION_ENDS and WUMS_HOOK_FINI_WUT are called
+        // Make sure aromaBaseModuleLoaded is loaded when WUMS_HOOK_APPLICATION_ENDS and WUMS_HOOK_FINI_WUT are called
         for (auto &curModule : gLoadedModules) {
             for (auto &curHook : curModule->getHookDataList()) {
                 if (curHook->getType() == WUMS_HOOK_APPLICATION_ENDS || curHook->getType() == WUMS_HOOK_FINI_WUT_DEVOPTAB) {
@@ -139,6 +141,41 @@ void doStart(int argc, char **argv) {
                 }
             }
         }
+
+        // Make sure the base module is called first of the "regular" modules (except the "InitBeforeRelocationDoneHook" hooks)
+        if (aromaBaseModuleLoaded) {
+            // Create a copy of all modules which do not call init before RelocationDoneHook
+            std::list<std::shared_ptr<ModuleData>> gLoadedModulesCopy;
+            for (auto &curModule : gLoadedModules) {
+                if (!curModule->isInitBeforeRelocationDoneHook()) {
+                    gLoadedModulesCopy.push_back(curModule);
+                }
+            }
+
+            // move homebrew_basemodule to the front
+            auto it = std::find_if(gLoadedModulesCopy.begin(),
+                                   gLoadedModulesCopy.end(),
+                                   [](auto &cur) { return std::string_view(cur->getExportName()) == "homebrew_basemodule"; });
+            if (it != gLoadedModulesCopy.end()) {
+                auto module = *it;
+                gLoadedModulesCopy.erase(it);
+                gLoadedModulesCopy.push_front(module);
+            }
+
+            // Move all modules which do not call init before RelocationDoneHook to the end, but keep homebrew_basemodule at the front.
+            for (auto &curModule : gLoadedModulesCopy) {
+                if (remove_first_if(gLoadedModules, [curModule](auto &cur) { return cur->getExportName() == curModule->getExportName(); })) {
+                    gLoadedModules.push_back(curModule);
+                }
+            }
+        }
+
+#ifdef VERBOSE_DEBUG
+        DEBUG_FUNCTION_LINE_VERBOSE("Final order of modules");
+        for (auto &curModule : gLoadedModules) {
+            DEBUG_FUNCTION_LINE_VERBOSE("%s", curModule->getExportName().c_str());
+        }
+#endif
 
         DEBUG_FUNCTION_LINE_VERBOSE("Resolve relocations without replacing alloc functions");
         ResolveRelocations(gLoadedModules, true, gUsedRPLs);
