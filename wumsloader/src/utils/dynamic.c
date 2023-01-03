@@ -33,7 +33,7 @@ void InitFunctionPointers(void) {
     addr_OSDynLoad_FindExport     = (void *) 0x0102B828; // 0200f428 - 0xFE3C00
     addr_OSDynLoad_IsModuleLoaded = (void *) 0x0102A59C; // 0200e19c - 0xFE3C00
 
-    OSDynLoad_Acquire("coreinit.rpl", &handle);
+    OSDynLoad_IsModuleLoaded("coreinit.rpl", &handle);
 
     uint32_t **value = 0;
     OSDynLoad_FindExport(handle, 1, "MEMAllocFromDefaultHeap", (void **) &value);
@@ -43,6 +43,9 @@ void InitFunctionPointers(void) {
     OSDynLoad_FindExport(handle, 1, "MEMFreeToDefaultHeap", (void **) &value);
     MEMFreeToDefaultHeap = *value;
 #include "imports.h"
+
+    OSDynLoad_IsModuleLoaded("coreinit.rpl", &handle);
+
     // override failed __rplwrap_exit find export
     OSDynLoad_FindExport(handle, 0, "exit", (void **) &addr___rplwrap_exit);
 }
