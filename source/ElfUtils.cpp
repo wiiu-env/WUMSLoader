@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include "../wumsloader/src/elfio/elf_types.hpp"
 #include "utils/logger.h"
 #include <coreinit/cache.h>
@@ -21,7 +23,7 @@ uint32_t load_loader_elf(unsigned char *baseAddress, char *elf_data, uint32_t fi
     phdrs = (ELFIO::Elf32_Phdr *) (elf_data + ehdr->e_phoff);
 
     for (i = 0; i < ehdr->e_phnum; i++) {
-        if (phdrs[i].p_type != PT_LOAD) {
+        if (phdrs[i].p_type != ELFIO::PT_LOAD) {
             continue;
         }
 
@@ -39,7 +41,7 @@ uint32_t load_loader_elf(unsigned char *baseAddress, char *elf_data, uint32_t fi
         memcpy((void *) p_paddr, image, phdrs[i].p_filesz);
         DCFlushRange((void *) p_paddr, phdrs[i].p_filesz);
 
-        if (phdrs[i].p_flags & PF_X) {
+        if (phdrs[i].p_flags & ELFIO::PF_X) {
             ICInvalidateRange((void *) p_paddr, phdrs[i].p_memsz);
         }
     }

@@ -4,7 +4,6 @@
 #include "memory.h"
 #include <algorithm>
 #include <coreinit/cache.h>
-#include <iostream>
 #include <iterator>
 #include <malloc.h>
 #include <vector>
