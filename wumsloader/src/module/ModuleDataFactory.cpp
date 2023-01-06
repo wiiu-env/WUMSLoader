@@ -79,7 +79,7 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
             } else if ((address >= 0x10000000) && address < 0xC0000000) {
                 data_size += sectionSize;
             }
-            if (psec->get_name().rfind(".wums.", 0) == 0) {
+            if (psec->get_name().starts_with(".wums.")) {
                 data_size += sectionSize;
             }
         }
@@ -196,6 +196,21 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
         }
     }
 
+    secInfo = moduleData->getSectionInfo(".wums.dependencies");
+    if (secInfo && secInfo.value()->getSize() > 0) {
+        if (secInfo.value()->getAddress() != 0) {
+            char *curEntry = (char *) secInfo.value()->getAddress();
+            while ((uint32_t) curEntry < (uint32_t) secInfo.value()->getAddress() + secInfo.value()->getSize()) {
+                if (*curEntry == '\0') {
+                    curEntry++;
+                    continue;
+                }
+                moduleData->addDependency(curEntry);
+                curEntry += strlen(curEntry) + 1;
+            }
+        }
+    }
+
     secInfo = moduleData->getSectionInfo(".wums.hooks");
     if (secInfo && secInfo.value()->getSize() > 0) {
         size_t entries_count = secInfo.value()->getSize() / sizeof(wums_hook_t);
@@ -251,7 +266,7 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                         }
                     } else if (key == "wums" || key == "wum") {
                         checkedVersion = true;
-                        if (value != "0.3.1") {
+                        if (value != "0.3.1" && values != "0.3.2") {
                             DEBUG_FUNCTION_LINE_WARN("Ignoring module - Unsupported WUMS version: %s.", value.c_str());
                             return std::nullopt;
                         }
