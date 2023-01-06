@@ -55,6 +55,7 @@ public:
     }
 
     void addRelocationData(std::unique_ptr<RelocationData> relocation_data) {
+        addDependency(relocation_data->getImportRPLInformation()->getRPLName());
         relocation_data_list.push_back(std::move(relocation_data));
     }
 
@@ -76,6 +77,14 @@ public:
 
     [[nodiscard]] const std::vector<std::unique_ptr<HookData>> &getHookDataList() const {
         return hook_data_list;
+    }
+
+    void addDependency(std::string module_name) {
+        dependency_list.insert(std::move(module_name));
+    }
+
+    [[nodiscard]] const std::set<std::string> &getDependencies() const {
+        return dependency_list;
     }
 
     void addSectionInfo(std::shared_ptr<SectionInfo> sectionInfo) {
@@ -168,6 +177,7 @@ private:
     std::vector<std::unique_ptr<RelocationData>> relocation_data_list;
     std::vector<std::unique_ptr<ExportData>> export_data_list;
     std::vector<std::unique_ptr<HookData>> hook_data_list;
+    std::set<std::string> dependency_list;
     std::set<std::shared_ptr<FunctionSymbolData>, FunctionSymbolDataComparator> symbol_data_list;
     std::map<std::string_view, std::shared_ptr<SectionInfo>> section_info_list;
 

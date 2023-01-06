@@ -231,17 +231,13 @@ bool CheckModulesByDependencies(const std::vector<std::shared_ptr<ModuleData>> &
 
     for (auto const &curModule : loadedModules) {
         DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s", curModule->getExportName().c_str());
-        std::set<std::string> importsFromOtherModules;
-        for (const auto &curReloc : curModule->getRelocationDataList()) {
-            std::string curRPL = curReloc->getImportRPLInformation()->getRPLName();
+        for (auto &curRPL : curModule->getDependencies()) {
+            if (!curRPL.starts_with("homebrew")) {
+                continue;
+            }
             if (curRPL == "homebrew_wupsbackend") {
                 OSFatal("Error: module depends on homebrew_wupsbackend, this is not supported");
             }
-            if (curRPL.starts_with("homebrew")) {
-                importsFromOtherModules.insert(curRPL);
-            }
-        }
-        for (auto &curRPL : importsFromOtherModules) {
             if (!loaderModuleNames.contains(curRPL)) {
                 DEBUG_FUNCTION_LINE_VERBOSE("%s requires %s which is not loaded yet", curModule->getExportName().c_str(), curRPL.c_str());
                 return false;
@@ -256,35 +252,28 @@ bool CheckModulesByDependencies(const std::vector<std::shared_ptr<ModuleData>> &
 
 std::vector<std::shared_ptr<ModuleData>> OrderModulesByDependencies(const std::vector<std::shared_ptr<ModuleData>> &loadedModules) {
     std::vector<std::shared_ptr<ModuleData>> finalOrder;
-    std::vector<std::string_view> loadedModulesExportNames;
-    std::vector<uint32_t> loadedModulesEntrypoints;
+    std::set<std::string> loadedModulesExportNames;
+    std::set<uint32_t> loadedModulesEntrypoints;
 
     while (true) {
         bool canBreak       = true;
         bool weDidSomething = false;
         for (auto const &curModule : loadedModules) {
-            if (std::find(loadedModulesEntrypoints.begin(), loadedModulesEntrypoints.end(), curModule->getEntrypoint()) != loadedModulesEntrypoints.end()) {
+            if (loadedModulesEntrypoints.contains(curModule->getEntrypoint())) {
                 // DEBUG_FUNCTION_LINE("%s [%08X] is already loaded" curModule->getExportName().c_str(), curModule->getEntrypoint());
                 continue;
             }
             canBreak = false;
             DEBUG_FUNCTION_LINE_VERBOSE("Check if we can load %s", curModule->getExportName().c_str());
-            std::vector<std::string_view> importsFromOtherModules;
-            for (const auto &curReloc : curModule->getRelocationDataList()) {
-                std::string_view curRPL = curReloc->getImportRPLInformation()->getRPLName();
-                if (curRPL == "homebrew_wupsbackend") {
+            bool canLoad = true;
+            for (auto &curImportRPL : curModule->getDependencies()) {
+                if (!curImportRPL.starts_with("homebrew")) {
+                    continue;
+                }
+                if (curImportRPL == "homebrew_wupsbackend") {
                     OSFatal("Error: module depends on homebrew_wupsbackend, this is not supported");
                 }
-                if (curRPL.starts_with("homebrew")) {
-                    if (std::find(importsFromOtherModules.begin(), importsFromOtherModules.end(), curRPL) == importsFromOtherModules.end()) {
-                        DEBUG_FUNCTION_LINE_VERBOSE("%s is importing from %s", curModule->getExportName().c_str(), curRPL.begin());
-                        importsFromOtherModules.push_back(curRPL);
-                    }
-                }
-            }
-            bool canLoad = true;
-            for (auto &curImportRPL : importsFromOtherModules) {
-                if (std::find(loadedModulesExportNames.begin(), loadedModulesExportNames.end(), curImportRPL) == loadedModulesExportNames.end()) {
+                if (!loadedModulesExportNames.contains(curImportRPL)) {
                     DEBUG_FUNCTION_LINE_VERBOSE("We can't load the module, because %s is not loaded yet", curImportRPL.begin());
                     canLoad = false;
                     break;
@@ -294,8 +283,8 @@ std::vector<std::shared_ptr<ModuleData>> OrderModulesByDependencies(const std::v
                 weDidSomething = true;
                 DEBUG_FUNCTION_LINE_VERBOSE("We can load: %s", curModule->getExportName().c_str());
                 finalOrder.push_back(curModule);
-                loadedModulesExportNames.emplace_back(curModule->getExportName());
-                loadedModulesEntrypoints.push_back(curModule->getEntrypoint());
+                loadedModulesExportNames.insert(curModule->getExportName());
+                loadedModulesEntrypoints.insert(curModule->getEntrypoint());
             }
         }
         if (canBreak) {
