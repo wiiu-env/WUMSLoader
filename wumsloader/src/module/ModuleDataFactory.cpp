@@ -54,6 +54,58 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
     }
     uint32_t sec_num = reader.sections.size();
 
+
+    bool checkedVersion = false;
+    for (uint32_t i = 0; i < sec_num; ++i) {
+        auto *psec = reader.sections[i];
+        if (psec->get_name() == ".wums.meta") {
+            char *curEntry = (char *) psec->get_data();
+            while ((uint32_t) curEntry < (uint32_t) psec->get_data() + psec->get_size()) {
+                if (*curEntry == '\0') {
+                    curEntry++;
+                    continue;
+                }
+
+                auto firstFound = std::string(curEntry).find_first_of('=');
+                if (firstFound != std::string::npos) {
+                    curEntry[firstFound] = '\0';
+                    std::string key(curEntry);
+                    std::string value(curEntry + firstFound + 1);
+
+                    if (key == "export_name") {
+                        moduleData->setExportName(value);
+                    } else if (key == "skipInitFini") {
+                        if (value == "true") {
+                            DEBUG_FUNCTION_LINE("skipInitFini = %s", value.c_str());
+                            moduleData->setSkipInitFini(true);
+                        } else {
+                            moduleData->setSkipInitFini(false);
+                        }
+                    } else if (key == "initBeforeRelocationDoneHook") {
+                        if (value == "true") {
+                            DEBUG_FUNCTION_LINE("initBeforeRelocationDoneHook = %s", value.c_str());
+                            moduleData->setInitBeforeRelocationDoneHook(true);
+                        } else {
+                            moduleData->setInitBeforeRelocationDoneHook(false);
+                        }
+                    } else if (key == "wums" || key == "wum") {
+                        checkedVersion = true;
+                        if (value != "0.3.1" && value != "0.3.2") {
+                            DEBUG_FUNCTION_LINE_WARN("Ignoring module - Unsupported WUMS version: %s.", value.c_str());
+                            return std::nullopt;
+                        }
+                    }
+                }
+                curEntry += strlen(curEntry) + 1;
+            }
+            break;
+        }
+    }
+    if (!checkedVersion) {
+        DEBUG_FUNCTION_LINE_ERR("Failed to check version. Ignoring module");
+        return {};
+    }
+
     auto destinations = make_unique_nothrow<uint8_t *[]>(sec_num);
     if (!destinations) {
         DEBUG_FUNCTION_LINE_ERR("Failed alloc memory for destinations array");
@@ -227,58 +279,6 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                 moduleData->addHookData(std::move(hookData));
             }
         }
-    }
-
-    bool checkedVersion = false;
-    secInfo             = moduleData->getSectionInfo(".wums.meta");
-    if (secInfo && secInfo.value()->getSize() > 0) {
-        auto *entries = (wums_entry_t *) secInfo.value()->getAddress();
-        if (entries != nullptr) {
-
-            char *curEntry = (char *) secInfo.value()->getAddress();
-            while ((uint32_t) curEntry < (uint32_t) secInfo.value()->getAddress() + secInfo.value()->getSize()) {
-                if (*curEntry == '\0') {
-                    curEntry++;
-                    continue;
-                }
-
-                auto firstFound = std::string(curEntry).find_first_of('=');
-                if (firstFound != std::string::npos) {
-                    curEntry[firstFound] = '\0';
-                    std::string key(curEntry);
-                    std::string value(curEntry + firstFound + 1);
-
-                    if (key == "export_name") {
-                        moduleData->setExportName(value);
-                    } else if (key == "skipInitFini") {
-                        if (value == "true") {
-                            DEBUG_FUNCTION_LINE("skipInitFini = %s", value.c_str());
-                            moduleData->setSkipInitFini(true);
-                        } else {
-                            moduleData->setSkipInitFini(false);
-                        }
-                    } else if (key == "initBeforeRelocationDoneHook") {
-                        if (value == "true") {
-                            DEBUG_FUNCTION_LINE("initBeforeRelocationDoneHook = %s", value.c_str());
-                            moduleData->setInitBeforeRelocationDoneHook(true);
-                        } else {
-                            moduleData->setInitBeforeRelocationDoneHook(false);
-                        }
-                    } else if (key == "wums" || key == "wum") {
-                        checkedVersion = true;
-                        if (value != "0.3.1" && values != "0.3.2") {
-                            DEBUG_FUNCTION_LINE_WARN("Ignoring module - Unsupported WUMS version: %s.", value.c_str());
-                            return std::nullopt;
-                        }
-                    }
-                }
-                curEntry += strlen(curEntry) + 1;
-            }
-        }
-    }
-    if (!checkedVersion) {
-        DEBUG_FUNCTION_LINE_ERR("Failed to check version. Ignoring module.");
-        return {};
     }
 
     // Get the symbol for functions.
