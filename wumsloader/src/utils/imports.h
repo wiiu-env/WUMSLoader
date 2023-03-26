@@ -34,6 +34,7 @@ IMPORT(OSSignalCond);
 IMPORT(OSSwapAtomic);
 IMPORT(OSDynLoad_GetAllocator);
 IMPORT(OSDynLoad_SetAllocator);
+IMPORT(__KernelGetInfo);
 
 IMPORT(FSTimeToCalendarTime);
 IMPORT(FSInit);

@@ -11,6 +11,7 @@
 #include "utils/utils.h"
 #include "version.h"
 #include <coreinit/debug.h>
+#include <coreinit/kernel.h>
 #include <coreinit/memexpheap.h>
 #include <cstdint>
 #include <list>
@@ -42,6 +43,14 @@ extern "C" int _start(int argc, char **argv) {
     if (upid == 2 || upid == 15) {
         doStart(argc, argv);
     }
+
+    KernelInfo0 kernelInfo0;
+    __KernelGetInfo0(&kernelInfo0, 0);
+    asm(
+            "mr 13,%0\n"
+            "mr 2,%1\n" ::"r"(kernelInfo0.sdaBase),
+            "r"(kernelInfo0.sda2Base)
+            :);
 
     return ((int (*)(int, char **))(*(unsigned int *) 0x1005E040))(argc, argv);
 }
