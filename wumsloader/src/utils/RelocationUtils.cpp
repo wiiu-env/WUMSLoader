@@ -130,7 +130,7 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
             }
             rplHandle = usedRPls[rplName];
 
-            OSDynLoad_FindExport(rplHandle, isData, functionName.c_str(), (void **) &functionAddress);
+            OSDynLoad_FindExport(rplHandle, (OSDynLoad_ExportType) isData, functionName.c_str(), (void **) &functionAddress);
             if (functionAddress == 0) {
                 DEBUG_FUNCTION_LINE_ERR("Failed to find export %s of %s", functionName.c_str(), rplName.c_str());
                 OSFatal("Failed to find export");
