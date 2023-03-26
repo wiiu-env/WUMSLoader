@@ -2,6 +2,8 @@
 #include <memory>
 #include <vector>
 
+#define ROUNDDOWN(val, align) ((val) & ~(align - 1))
+#define ROUNDUP(val, align)   ROUNDDOWN(((val) + (align - 1)), align)
 
 template<class T, class... Args>
 std::unique_ptr<T> make_unique_nothrow(Args &&...args) noexcept(noexcept(T(std::forward<Args>(args)...))) {

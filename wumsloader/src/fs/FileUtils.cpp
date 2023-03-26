@@ -1,13 +1,11 @@
 #include "utils/logger.h"
+#include "utils/utils.h"
 #include <coreinit/memdefaultheap.h>
 #include <cstdint>
 #include <fcntl.h>
 #include <malloc.h>
 #include <string>
 #include <unistd.h>
-
-#define ROUNDDOWN(val, align) ((val) & ~(align - 1))
-#define ROUNDUP(val, align)   ROUNDDOWN(((val) + (align - 1)), align)
 
 int32_t LoadFileToMem(const std::string &filepath, uint8_t **inbuffer, uint32_t *size) {
     //! always initialze input
@@ -47,6 +45,7 @@ int32_t LoadFileToMem(const std::string &filepath, uint8_t **inbuffer, uint32_t 
     ::close(iFd);
 
     if (done != filesize) {
+        memset(buffer, 0, ROUNDUP(filesize, 0x40));
         free(buffer);
         buffer = nullptr;
         return -3;

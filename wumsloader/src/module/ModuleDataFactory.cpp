@@ -45,7 +45,12 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
         return {};
     }
 
-    auto cleanupBuffer = onLeavingScope([buffer]() { MEMFreeToDefaultHeap(buffer); });
+    auto cleanupBuffer = onLeavingScope([buffer, fsize]() {
+        // Some games (e.g. Minecraft) expect the default heap to be empty.
+        // Make sure to clean up the memory after using it
+        memset(buffer, 0, ROUNDUP(fsize, 0x40));
+        MEMFreeToDefaultHeap(buffer);
+    });
 
     // Load ELF data
     if (!reader.load(reinterpret_cast<char *>(buffer), fsize)) {
