@@ -53,13 +53,7 @@ bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules,
 
         auto &relocData = curModule->getRelocationDataList();
 
-        // On first usage we can't redirect the alloc functions to our custom heap
-        // because threads can't run it on it. In order to patch the kernel
-        // to fully support our memory region, we have to run the MemoryMapping once with the default heap.
-        // Afterwards we can just rely on the custom heap.
-        bool skipAllocFunction = skipMemoryMappingModule && (std::string_view(curModule->getExportName()) == "homebrew_memorymapping");
-        DEBUG_FUNCTION_LINE_VERBOSE("Skip alloc replace? %d", skipAllocFunction);
-        if (!doRelocation(gLoadedModules, relocData, nullptr, 0, skipAllocFunction, usedRPls)) {
+        if (!doRelocation(gLoadedModules, relocData, nullptr, 0, usedRPls)) {
             wasSuccessful = false;
             DEBUG_FUNCTION_LINE_ERR("Failed to do Relocations for %s", curModule->getExportName().c_str());
             OSFatal("Failed to do Relocations");
@@ -77,7 +71,6 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
                   const std::vector<std::unique_ptr<RelocationData>> &relocData,
                   relocation_trampoline_entry_t *tramp_data,
                   uint32_t tramp_length,
-                  bool skipAllocReplacement,
                   std::map<std::string, OSDynLoad_Module> &usedRPls) {
     for (auto const &curReloc : relocData) {
         auto &functionName       = curReloc->getName();
@@ -100,14 +93,12 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
             }
         }
 
-        if (!skipAllocReplacement) {
-            if (functionName == "MEMAllocFromDefaultHeap") {
-                functionAddress = reinterpret_cast<uint32_t>(&MEMAlloc);
-            } else if (functionName == "MEMAllocFromDefaultHeapEx") {
-                functionAddress = reinterpret_cast<uint32_t>(&MEMAllocEx);
-            } else if (functionName == "MEMFreeToDefaultHeap") {
-                functionAddress = reinterpret_cast<uint32_t>(&MEMFree);
-            }
+        if (functionName == "MEMAllocFromDefaultHeap") {
+            functionAddress = reinterpret_cast<uint32_t>(&MEMAlloc);
+        } else if (functionName == "MEMAllocFromDefaultHeapEx") {
+            functionAddress = reinterpret_cast<uint32_t>(&MEMAllocEx);
+        } else if (functionName == "MEMFreeToDefaultHeap") {
+            functionAddress = reinterpret_cast<uint32_t>(&MEMFree);
         }
 
         if (functionAddress == 0) {
