@@ -52,6 +52,7 @@ extern "C" int _start(int argc, char **argv) {
             "r"(kernelInfo0.sda2Base)
             :);
 
+    OSCheckActiveThreads();
     return ((int (*)(int, char **))(*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
