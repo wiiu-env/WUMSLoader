@@ -160,7 +160,8 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 	@$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d -x assembler-with-cpp $(ASFLAGS) -c $< -o $@ $(ERROR_FILTER)
     
 wumsloader_elf.h: $(wumsloader_elf)
-	bin2s -a 32 -H `(echo $(<F) | tr . _)`.h $< | $(AS) -o $(<F).o
+	@echo $(notdir $<)
+	@$(bin2o)
 
 -include $(DEPENDS)
 
