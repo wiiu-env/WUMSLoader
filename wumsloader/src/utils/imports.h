@@ -38,6 +38,8 @@ IMPORT(__KernelGetInfo);
 IMPORT(OSCheckActiveThreads);
 IMPORT(OSGetCurrentThread);
 IMPORT(OSSetThreadCleanupCallback);
+IMPORT(OSIsDebuggerPresent);
+IMPORT(__os_snprintf);
 
 IMPORT(FSTimeToCalendarTime);
 IMPORT(FSInit);
