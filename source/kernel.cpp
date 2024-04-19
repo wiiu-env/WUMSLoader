@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "../wumsloader/src/globals.h"
 #include "ElfUtils.h"
 #include "wumsloader_elf.h"
 #include <coreinit/cache.h>
@@ -20,6 +21,9 @@ void SetupWUMSLoader() {
     KernelWriteU32(repl_addr, 0x48000003 | entryPoint);
     DCFlushRange((void *) repl_addr, 4);
     ICInvalidateRange((void *) (repl_addr), 4);
+
+    // We call the mainhook (wumloader) once with a MAGIC number to set up the WUMS Modules but not actually call the original main function
+    ((int (*)(int, char **))(entryPoint))(WUMS_LOADER_SETUP_MAGIC_WORD, nullptr);
 }
 
 void KernelWriteU32(uint32_t addr, uint32_t value) {

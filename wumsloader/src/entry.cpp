@@ -53,6 +53,10 @@ extern "C" int _start(int argc, char **argv) {
             :);
 
     OSCheckActiveThreads();
+    if (argc == WUMS_LOADER_SETUP_MAGIC_WORD) {
+        DEBUG_FUNCTION_LINE("Skip calling the real main function because we just want to setup WUMS");
+        return 0;
+    }
     return ((int (*)(int, char **))(*(unsigned int *) 0x1005E040))(argc, argv);
 }
 
