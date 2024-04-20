@@ -5,7 +5,6 @@
 #include <memory>
 #include <wums.h>
 
-#ifdef DEBUG
 static const char **hook_names = (const char *[]){
         "WUMS_HOOK_INIT_WUT_MALLOC",
         "WUMS_HOOK_FINI_WUT_MALLOC",
@@ -27,7 +26,6 @@ static const char **hook_names = (const char *[]){
         "WUMS_HOOK_RELOCATIONS_DONE",
         "WUMS_HOOK_APPLICATION_REQUESTS_EXIT",
         "WUMS_HOOK_DEINIT"};
-#endif
 
 void CallHook(const std::vector<std::shared_ptr<ModuleData>> &modules, wums_hook_type_t type, bool condition) {
     if (condition) {
@@ -48,7 +46,10 @@ void CallHook(const std::shared_ptr<ModuleData> &module, wums_hook_type_t type, 
     }
 }
 
+extern "C" bool MEMCheckExpHeap(void *heap, bool logProblems);
+
 void CallHook(const std::shared_ptr<ModuleData> &module, wums_hook_type_t type) {
+    bool foundHook = false;
     for (auto &curHook : module->getHookDataList()) {
         auto func_ptr = (uint32_t) curHook->getTarget();
         if (func_ptr == 0) {
@@ -57,6 +58,7 @@ void CallHook(const std::shared_ptr<ModuleData> &module, wums_hook_type_t type) 
         }
 
         if (type == curHook->getType()) {
+            foundHook = true;
             if ((type == WUMS_HOOK_APPLICATION_STARTS ||
                  type == WUMS_HOOK_APPLICATION_ENDS ||
                  type == WUMS_HOOK_INIT_WUT_MALLOC ||
@@ -89,5 +91,12 @@ void CallHook(const std::shared_ptr<ModuleData> &module, wums_hook_type_t type) 
             }
             break;
         }
+    }
+
+    if (foundHook && !MEMCheckExpHeap(MEMGetBaseHeapHandle(MEM_BASE_HEAP_MEM2), true)) {
+        DEBUG_FUNCTION_LINE_ERR("MEM2 default heap is corrupted while calling hook %s for module %s", hook_names[type], module->getExportName().c_str());
+#ifdef DEBUG
+        OSFatal("WUMSLoader: MEM2 default heap is corrupted. \n Please restart the console.");
+#endif
     }
 }
