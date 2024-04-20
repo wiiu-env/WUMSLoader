@@ -3,7 +3,7 @@ OUTPUT(loader.elf);
 ENTRY(_start);
 
 SECTIONS {
-	. = 0x00809000;
+	. = 0x00800000;
     .text ALIGN(32) : {
         KEEP (*(.crt0))
         KEEP (*(SORT_NONE(.init)))
@@ -92,4 +92,4 @@ SECTIONS {
 	}
 }
 
-ASSERT((SIZEOF(.text) + SIZEOF(.data) + SIZEOF(.rodata) + SIZEOF(.eh_frame) + SIZEOF(.bss)) < 0x52000, "Memory overlapping with modules.");
+ASSERT((SIZEOF(.text) + SIZEOF(.data) + SIZEOF(.rodata) + SIZEOF(.eh_frame) + SIZEOF(.bss)) < 0x50000, "Memory overlapping with modules.");
