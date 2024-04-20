@@ -40,6 +40,9 @@ IMPORT(OSGetCurrentThread);
 IMPORT(OSSetThreadCleanupCallback);
 IMPORT(OSIsDebuggerPresent);
 IMPORT(__os_snprintf);
+IMPORT(MEMCheckHeap);
+IMPORT(MEMGetBaseHeapHandle);
+IMPORT(MEMCheckExpHeap);
 
 IMPORT(FSTimeToCalendarTime);
 IMPORT(FSInit);
