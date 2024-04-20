@@ -126,14 +126,16 @@ void doStart(int argc, char **argv) {
         // Order modules list by dependencies.
         gLoadedModules = OrderModulesByDependencies(gLoadedModules);
 
-        // make sure the plugin backend module is at the end.
-        auto it = std::find_if(gLoadedModules.begin(),
-                               gLoadedModules.end(),
-                               [](auto &cur) { return std::string_view(cur->getExportName()) == "homebrew_wupsbackend"; });
-        if (it != gLoadedModules.end()) {
-            auto module = *it;
-            gLoadedModules.erase(it);
-            gLoadedModules.push_back(module);
+        {
+            // make sure the plugin backend module is at the end.
+            auto it = std::find_if(gLoadedModules.begin(),
+                                   gLoadedModules.end(),
+                                   [](auto &cur) { return std::string_view(cur->getExportName()) == "homebrew_wupsbackend"; });
+            if (it != gLoadedModules.end()) {
+                auto module = *it;
+                gLoadedModules.erase(it);
+                gLoadedModules.push_back(module);
+            }
         }
 
         bool aromaBaseModuleLoaded = false;
