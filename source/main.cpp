@@ -13,7 +13,11 @@ int main(int argc, char **argv) {
         basePath = argv[0];
     }
     if (argc < 4 || std::string_view("EnvironmentLoader") != argv[1] || (uint32_t) argv[2] < 2 || (uint32_t) argv[3] == 0) {
-        OSFatal("WUMSLoader: Failed to parse arguments, make sure to use the latest environment loader.\n See https://wiiu.hacks.guide/ for more information.");
+        OSFatal("WUMSLoader:\n"
+                "Failed to parse arguments! Make sure to use the latest\n"
+                "version of the EnvironmentLoader.\n"
+                "\n\n"
+                "See https://wiiu.hacks.guide/ for instructions on how to update!");
     }
 
     memcpy(MEMORY_REGION_USABLE_MEM_REGION_END_VALUE_PTR, &argv[3], sizeof(uint32_t));
