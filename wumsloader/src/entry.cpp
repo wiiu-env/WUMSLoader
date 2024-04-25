@@ -16,7 +16,7 @@
 #include <cstdint>
 #include <list>
 
-#define VERSION "v0.2.3"
+#define VERSION "v0.2.4"
 
 void CallInitHooksForModule(const std::shared_ptr<ModuleData> &curModule);
 
