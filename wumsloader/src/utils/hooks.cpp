@@ -2,9 +2,11 @@
 #include "globals.h"
 #include "module/ModuleData.h"
 #include "utils/logger.h"
+#include <coreinit/memexpheap.h>
 #include <memory>
 #include <wums.h>
 
+#ifdef DEBUG
 static const char **hook_names = (const char *[]){
         "WUMS_HOOK_INIT_WUT_MALLOC",
         "WUMS_HOOK_FINI_WUT_MALLOC",
@@ -26,6 +28,7 @@ static const char **hook_names = (const char *[]){
         "WUMS_HOOK_RELOCATIONS_DONE",
         "WUMS_HOOK_APPLICATION_REQUESTS_EXIT",
         "WUMS_HOOK_DEINIT"};
+#endif
 
 void CallHook(const std::vector<std::shared_ptr<ModuleData>> &modules, wums_hook_type_t type, bool condition) {
     if (condition) {
@@ -45,8 +48,6 @@ void CallHook(const std::shared_ptr<ModuleData> &module, wums_hook_type_t type, 
         CallHook(module, type);
     }
 }
-
-extern "C" bool MEMCheckExpHeap(void *heap, bool logProblems);
 
 void CallHook(const std::shared_ptr<ModuleData> &module, wums_hook_type_t type) {
     bool foundHook = false;
@@ -92,11 +93,10 @@ void CallHook(const std::shared_ptr<ModuleData> &module, wums_hook_type_t type) 
             break;
         }
     }
-
-    if (foundHook && !MEMCheckExpHeap(MEMGetBaseHeapHandle(MEM_BASE_HEAP_MEM2), true)) {
-        DEBUG_FUNCTION_LINE_ERR("MEM2 default heap is corrupted while calling hook %s for module %s", hook_names[type], module->getExportName().c_str());
 #ifdef DEBUG
+    if (foundHook && !MEMCheckExpHeap(MEMGetBaseHeapHandle(MEM_BASE_HEAP_MEM2), MEM_EXP_HEAP_CHECK_FLAGS_LOG_ERRORS)) {
+        DEBUG_FUNCTION_LINE_ERR("MEM2 default heap is corrupted while calling hook %s for module %s", hook_names[type], module->getExportName().c_str());
         OSFatal("WUMSLoader: MEM2 default heap is corrupted. \n Please restart the console.");
-#endif
     }
+#endif
 }
