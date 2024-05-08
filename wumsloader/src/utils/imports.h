@@ -43,6 +43,7 @@ IMPORT(__os_snprintf);
 IMPORT(MEMCheckHeap);
 IMPORT(MEMGetBaseHeapHandle);
 IMPORT(MEMCheckExpHeap);
+IMPORT(OSGetBootPMFlags);
 
 IMPORT(FSTimeToCalendarTime);
 IMPORT(FSInit);

@@ -78,7 +78,17 @@ void SaveLoadedRPLsInGlobalInformation(module_information_t *globalInformation,
     }
 }
 
+extern "C" uint32_t OSGetBootPMFlags(void);
+
 void doStart(int argc, char **argv) {
+    uint32_t bootFlags = OSGetBootPMFlags();
+    /*
+     * Bit 13 - OS relaunch (OSForceFullRelaunch()).
+       See more https://wiiubrew.org/wiki/Boot1#PowerFlags */
+    if ((bootFlags & 0x00002000) != 0 && argc == WUMS_LOADER_SETUP_MAGIC_WORD) {
+        OSReport("OSForceFullRelaunch detected, skipping WUMS\n", bootFlags);
+        return;
+    }
     init_wut();
     initLogging();
 
