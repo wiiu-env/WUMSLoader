@@ -31,17 +31,6 @@ int main(int argc, char **argv) {
     DEBUG_FUNCTION_LINE("Setup wumsloader");
     SetupWUMSLoader();
 
-    nn::act::Initialize();
-    nn::act::SlotNo slot        = nn::act::GetSlotNo();
-    nn::act::SlotNo defaultSlot = nn::act::GetDefaultAccount();
-    nn::act::Finalize();
-
-    if (defaultSlot) { //normal menu boot
-        SYSLaunchMenu();
-    } else { //show mii select
-        _SYSLaunchMenuWithCheckingAccount(slot);
-    }
-
     deinitLogging();
 
     __fini();
