@@ -220,6 +220,7 @@ void doStart(int argc, char **argv) {
 
         DEBUG_FUNCTION_LINE_VERBOSE("Call Relocations done hook");
         CallHook(gLoadedModules, WUMS_HOOK_RELOCATIONS_DONE);
+        CallHook(gLoadedModules, WUMS_HOOK_RELOCATIONS_DONE);
 
         for (auto &curModule : gLoadedModules) {
             if (!curModule->isInitBeforeRelocationDoneHook()) {
@@ -237,6 +238,7 @@ void doStart(int argc, char **argv) {
     CallHook(gLoadedModules, WUMS_HOOK_INIT_WUT_DEVOPTAB);
     CallHook(gLoadedModules, WUMS_HOOK_INIT_WUT_SOCKETS);
     CallHook(gLoadedModules, WUMS_HOOK_APPLICATION_STARTS);
+    CallHook(gLoadedModules, WUMS_HOOK_ALL_APPLICATION_STARTS_DONE);
 
     deinitLogging();
     fini_wut();
