@@ -14,6 +14,9 @@ extern std::unique_ptr<module_information_single_t[]> gModuleDataInfo;
 extern std::map<std::string, OSDynLoad_Module> gUsedRPLs;
 extern std::vector<void *> gAllocatedAddresses;
 
+extern WUMSRPLAllocatorAllocFn gCustomRPLAllocatorAllocFn;
+extern WUMSRPLAllocatorFreeFn gCustomRPLAllocatorFreeFn;
+
 #define MEMORY_REGION_START                           0x00800000
 #define MEMORY_REGION_SIZE                            0x00800000
 

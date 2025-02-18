@@ -95,7 +95,7 @@ std::optional<std::shared_ptr<ModuleData>> ModuleDataFactory::load(const std::st
                         }
                     } else if (key == "wums" || key == "wum") {
                         checkedVersion = true;
-                        if (value != "0.3.1" && value != "0.3.2" && value != "0.3.3") {
+                        if (value != "0.3.1" && value != "0.3.2" && value != "0.3.3" && value != "0.3.4") {
                             DEBUG_FUNCTION_LINE_WARN("Ignoring module - Unsupported WUMS version: %s.", value.c_str());
                             return std::nullopt;
                         }

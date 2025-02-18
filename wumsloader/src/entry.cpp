@@ -16,7 +16,7 @@
 #include <cstdint>
 #include <list>
 
-#define VERSION "v0.2.7"
+#define VERSION "v0.2.8"
 
 void CallInitHooksForModule(const std::shared_ptr<ModuleData> &curModule);
 
@@ -209,7 +209,7 @@ void doStart(int argc, char **argv) {
         }
 #endif
 
-        DEBUG_FUNCTION_LINE_VERBOSE("Resolve relocations without replacing alloc functions");
+        DEBUG_FUNCTION_LINE_VERBOSE("Resolve relocations without loading additonal rpls");
         ResolveRelocations(gLoadedModules, true, gUsedRPLs);
 
         for (auto &curModule : gLoadedModules) {
@@ -218,8 +218,13 @@ void doStart(int argc, char **argv) {
             }
         }
 
+        // Hacky workaround for modules to allow register a custom rpl allocator function
+        CallHook(gLoadedModules, WUMS_HOOK_GET_CUSTOM_RPL_ALLOCATOR);
+
+        // Now we can load unloaded rpls.
+        ResolveRelocations(gLoadedModules, false, gUsedRPLs);
+
         DEBUG_FUNCTION_LINE_VERBOSE("Call Relocations done hook");
-        CallHook(gLoadedModules, WUMS_HOOK_RELOCATIONS_DONE);
         CallHook(gLoadedModules, WUMS_HOOK_RELOCATIONS_DONE);
 
         for (auto &curModule : gLoadedModules) {
@@ -228,7 +233,8 @@ void doStart(int argc, char **argv) {
             }
         }
     } else {
-        DEBUG_FUNCTION_LINE("Resolve relocations and replace alloc functions");
+        DEBUG_FUNCTION_LINE("Resolve relocations and load unloaded rpls functions");
+        CallHook(gLoadedModules, WUMS_HOOK_CLEAR_ALLOCATED_RPL_MEMORY);
         ResolveRelocations(gLoadedModules, false, gUsedRPLs);
         CallHook(gLoadedModules, WUMS_HOOK_RELOCATIONS_DONE);
     }

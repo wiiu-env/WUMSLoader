@@ -33,33 +33,41 @@ static void CustomDynLoadFree(void *addr) {
     free(addr);
 
     // Remove from list
-    auto it = std::find(gAllocatedAddresses.begin(), gAllocatedAddresses.end(), addr);
-    if (it != gAllocatedAddresses.end()) {
+    if (const auto it = std::ranges::find(gAllocatedAddresses, addr); it != gAllocatedAddresses.end()) {
         gAllocatedAddresses.erase(it);
     }
 }
 
-bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules, bool skipMemoryMappingModule, std::map<std::string, OSDynLoad_Module> &usedRPls) {
+bool ResolveRelocations(const std::vector<std::shared_ptr<ModuleData>> &loadedModules, const bool skipUnloadedRpl, std::map<std::string, OSDynLoad_Module> &usedRPls) {
     bool wasSuccessful = true;
+
 
     OSDynLoadAllocFn prevDynLoadAlloc = nullptr;
     OSDynLoadFreeFn prevDynLoadFree   = nullptr;
 
-    OSDynLoad_GetAllocator(&prevDynLoadAlloc, &prevDynLoadFree);
-    OSDynLoad_SetAllocator(CustomDynLoadAlloc, CustomDynLoadFree);
+    if (!skipUnloadedRpl) {
+        OSDynLoad_GetAllocator(&prevDynLoadAlloc, &prevDynLoadFree);
+        if (gCustomRPLAllocatorAllocFn != nullptr && gCustomRPLAllocatorFreeFn != nullptr) {
+            OSDynLoad_SetAllocator(reinterpret_cast<OSDynLoadAllocFn>(gCustomRPLAllocatorAllocFn), gCustomRPLAllocatorFreeFn);
+        } else {
+            OSDynLoad_SetAllocator(CustomDynLoadAlloc, CustomDynLoadFree);
+        }
+    }
 
     for (auto &curModule : loadedModules) {
         DEBUG_FUNCTION_LINE("Let's do the relocations for %s", curModule->getExportName().c_str());
 
         auto &relocData = curModule->getRelocationDataList();
 
-        if (!doRelocation(gLoadedModules, relocData, nullptr, 0, usedRPls)) {
+        if (!doRelocation(gLoadedModules, relocData, nullptr, 0, usedRPls, skipUnloadedRpl)) {
             wasSuccessful = false;
             DEBUG_FUNCTION_LINE_ERR("Failed to do Relocations for %s", curModule->getExportName().c_str());
             OSFatal("Failed to do Relocations");
         }
     }
-    OSDynLoad_SetAllocator(prevDynLoadAlloc, prevDynLoadFree);
+    if (!skipUnloadedRpl) {
+        OSDynLoad_SetAllocator(prevDynLoadAlloc, prevDynLoadFree);
+    }
 
     DCFlushRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
     ICInvalidateRange((void *) MEMORY_REGION_START, MEMORY_REGION_SIZE);
@@ -70,8 +78,9 @@ bool ResolveRelocations(std::vector<std::shared_ptr<ModuleData>> &loadedModules,
 bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
                   const std::vector<std::unique_ptr<RelocationData>> &relocData,
                   relocation_trampoline_entry_t *tramp_data,
-                  uint32_t tramp_length,
-                  std::map<std::string, OSDynLoad_Module> &usedRPls) {
+                  const uint32_t tramp_length,
+                  std::map<std::string, OSDynLoad_Module> &usedRPls,
+                  const bool skipUnloadedRpl) {
     for (auto const &curReloc : relocData) {
         auto &functionName       = curReloc->getName();
         std::string rplName      = curReloc->getImportRPLInformation()->getRPLName();
@@ -106,7 +115,14 @@ bool doRelocation(const std::vector<std::shared_ptr<ModuleData>> &moduleList,
             OSDynLoad_Module rplHandle = nullptr;
 
             if (!usedRPls.contains(rplName)) {
-                DEBUG_FUNCTION_LINE_VERBOSE("Acquire %s", rplName.c_str());
+                OSDynLoad_Module tmp = nullptr;
+                if (OSDynLoad_IsModuleLoaded(rplName.c_str(), &tmp) != OS_DYNLOAD_OK || tmp == nullptr) {
+                    if (skipUnloadedRpl) {
+                        DEBUG_FUNCTION_LINE_VERBOSE("Skip acquire of %s", rplName.c_str());
+                        continue;
+                    }
+                }
+
                 // Always acquire to increase refcount and make sure it won't get unloaded while we're using it.
                 OSDynLoad_Error err = OSDynLoad_Acquire(rplName.c_str(), &rplHandle);
                 if (err != OS_DYNLOAD_OK) {
