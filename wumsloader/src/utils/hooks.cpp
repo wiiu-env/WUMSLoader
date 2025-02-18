@@ -27,10 +27,15 @@ static const char **hook_names = (const char *[]){
         "WUMS_HOOK_APPLICATION_ENDS",
         "WUMS_HOOK_RELOCATIONS_DONE",
         "WUMS_HOOK_APPLICATION_REQUESTS_EXIT",
+
         "WUMS_HOOK_DEINIT",
+
         "WUMS_HOOK_ALL_APPLICATION_STARTS_DONE",
         "WUMS_HOOK_ALL_APPLICATION_ENDS_DONE",
         "WUMS_HOOK_ALL_APPLICATION_REQUESTS_EXIT_DONE",
+
+        "WUMS_HOOK_GET_CUSTOM_RPL_ALLOCATOR",
+        "WUMS_HOOK_CLEAR_ALLOCATED_RPL_MEMORY",
 };
 #endif
 
@@ -82,6 +87,7 @@ void CallHook(const std::shared_ptr<ModuleData> &module, wums_hook_type_t type) 
                  type == WUMS_HOOK_DEINIT ||
                  type == WUMS_HOOK_ALL_APPLICATION_STARTS_DONE ||
                  type == WUMS_HOOK_ALL_APPLICATION_ENDS_DONE ||
+                 type == WUMS_HOOK_CLEAR_ALLOCATED_RPL_MEMORY ||
                  type == WUMS_HOOK_ALL_APPLICATION_REQUESTS_EXIT_DONE)) {
                 DEBUG_FUNCTION_LINE("Calling hook of type %s [%d] %d for %s: %08X", hook_names[type], type, curHook->getType(), module->getExportName().c_str(), curHook->getTarget());
                 ((void (*)())((uint32_t *) func_ptr))();
@@ -92,6 +98,13 @@ void CallHook(const std::shared_ptr<ModuleData> &module, wums_hook_type_t type) 
                 wums_app_init_args_t args;
                 args.module_information = &gModuleInformation;
                 ((void (*)(wums_app_init_args_t *))((uint32_t *) func_ptr))(&args);
+            } else if (type == WUMS_HOOK_GET_CUSTOM_RPL_ALLOCATOR) {
+                DEBUG_FUNCTION_LINE("Calling hook of type %s [%d] %d for %s: %08X", hook_names[type], type, curHook->getType(), module->getExportName().c_str(), curHook->getTarget());
+
+                const auto [allocFn, freeFn] = reinterpret_cast<wums_internal_custom_rpl_allocator_t (*)()>(reinterpret_cast<uint32_t *>(func_ptr))();
+                gCustomRPLAllocatorAllocFn   = allocFn;
+                gCustomRPLAllocatorFreeFn    = freeFn;
+
             } else {
                 DEBUG_FUNCTION_LINE_ERR("#########################################");
                 DEBUG_FUNCTION_LINE_ERR("#########HOOK NOT IMPLEMENTED %d#########", type);

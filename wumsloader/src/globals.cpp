@@ -8,3 +8,6 @@ std::unique_ptr<module_information_single_t[]> gModuleDataInfo __attribute__((se
 
 std::map<std::string, OSDynLoad_Module> gUsedRPLs __attribute__((section(".data")));
 std::vector<void *> gAllocatedAddresses __attribute__((section(".data")));
+
+WUMSRPLAllocatorAllocFn gCustomRPLAllocatorAllocFn __attribute__((section(".data"))) = nullptr;
+WUMSRPLAllocatorFreeFn gCustomRPLAllocatorFreeFn __attribute__((section(".data")))   = nullptr;
